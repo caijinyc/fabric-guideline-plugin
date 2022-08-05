@@ -60,7 +60,7 @@ export class AlignGuidelines {
     const point1 = fabric.util.transformPoint(new fabric.Point(x1, y1), this.canvas.viewportTransform as any);
     const point2 = fabric.util.transformPoint(new fabric.Point(x2, y2), this.canvas.viewportTransform as any);
 
-    // 使用 canvas 的 api 用来绘制辅助线
+    // use origin canvas api to draw guideline
     ctx.save();
     ctx.lineWidth = this.aligningLineWidth;
     ctx.strokeStyle = this.aligningLineColor;
@@ -417,27 +417,3 @@ export class AlignGuidelines {
     this.watchMouseWheel();
   }
 }
-
-/**
- * 获取选中的对象
- * 获取选中的对象的上中下坐标，记为 horizontalLines
- *    horizontalLines 内部元素：
- *    {
- *      type: 'top' | 'center' | 'bottom',
- *      // y 坐标位置
- *      y: number,
- *    }
- * 获取选中的对象的左中右坐标，记为 verticalLinesLines
- *    verticalLines 内部元素：
- *    {
- *      type: 'left' | 'center' | 'right',
- *      // x 坐标位置
- *      x: number,
- *    }
- * 获取所有对象
- * 遍历所有对象
- * 如果对象的上中下坐标和 horizontalLines 相等，则记录需要绘制的线
- *     这里需要注意的是，我们需要根据 range 来判断是否需要吸附
- * 如果对象的左中右坐标和 verticalLines 相等，则记录需要绘制的线
- * 绘制辅助线
- */

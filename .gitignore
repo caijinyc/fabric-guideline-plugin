@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+.pnpm
+
 lib
 
 # Editor directories and files
