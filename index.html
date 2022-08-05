@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="./lib/http_pagecdn.io_lib_fabric_3.6.3_fabric.js"></script>
+    <script src="./index.js" async></script>
+    <link rel="stylesheet" type="text/css" href="./style.css">
+</head>
+<body>
+
+
+<div id="container">
+    <canvas id="myCanvas" width="700" height="400"></canvas>
+
+    <div id="sidebar">
+        <button id="reset">RESET</button>
+
+        <hr />
+
+        <div id="info">
+
+            <div>
+                <div><b>zoom:</b> <div id="info_zoom"></div></div>
+                <div><b>viewport top:</b> <div id="info_vptTop"></div></div>
+                <div><b>viewport left:</b> <div id="info_vptLeft"></div></div>
+            </div>
+
+            <hr />
+
+            <div>
+                <div><b>Alignment lines (green)</b></div>
+                <div><b>Horizontal:</b> <div id="info_alignmentLines_horizontal"></div></div>
+                <div><b>Vertical:</b> <div id="info_alignmentLines_vertical"></div></div>
+            </div>
+
+            <hr />
+
+            <div>
+                <div><b>Canvas-center lines (purple)</b></div>
+                <div><b>Horizontal:</b> <div id="info_centerLine_horizontal"></div></div>
+                <div><b>Vertical:</b> <div id="info_centerLine_vertical"></div></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
