@@ -1,3 +1,4 @@
+import { fabric } from "fabric";
 /**
  * 问题点：
  * 1、自动吸附只有相同的 margin 才会触发，例如顶部只会和顶部自动吸附，左边只会和左边自动吸附
@@ -7,10 +8,8 @@
 // SETUP
 // ==========================================
 
-console.log("zxc");
 const canvas = new fabric.Canvas("myCanvas");
 
-console.log("canvas", canvas, fabric);
 canvas.backgroundColor = "#222222";
 const lastClientX = 0;
 const lastClientY = 0;
@@ -18,45 +17,46 @@ const state = "default";
 const outer = null;
 const box1 = null;
 const box2 = null;
-this.centerLine_horizontal = "";
-this.centerLine_vertical = "";
-this.alignmentLines_horizontal = "";
-this.alignmentLines_vertical = "";
+const global: any = {};
+global.centerLine_horizontal = "";
+global.centerLine_vertical = "";
+global.alignmentLines_horizontal = "";
+global.alignmentLines_vertical = "";
 
 setupObjects();
-updateInfo(canvas);
+updateInfo();
 
 fabric.Object.prototype.set({
   //cornerSize: 15,
   //cornerStyle: 'circle',
   // cornerColor: '#ffffff',
-  transparentCorners: true,
+  // transparentCorners: true,
   //strokeWidth: 8,
   // cornerlineWidth: 4,
-  borderColor: "pink",
-  borderScaleFactor: 6,
+  // borderColor: "pink",
+  // borderScaleFactor: 6,
 });
 
-// 修改控制锚点
-function newControls(control, ctx, methodName, left, top) {
-  // console.log("control is: " + control)
-  if (!this.isControlVisible(control)) {
-    return;
-  }
-  var size = this.cornerSize;
-  this.transparentCorners || ctx.clearRect(left, top, size, size);
-  ctx.beginPath();
-  ctx.arc(left + size / 2, top + size / 2, size / 2, 0, 2 * Math.PI, false);
-  ctx.strokeStyle = "#FF0000";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-}
-
-fabric.Object.prototype._drawControl = newControls;
-fabric.Object.prototype.cornerSize = 22;
+// // 修改控制锚点
+// function newControls(control, ctx, methodName, left, top) {
+//   // console.log("control is: " + control)
+//   if (!global.isControlVisible(control)) {
+//     return;
+//   }
+//   var size = global.cornerSize;
+//   global.transparentCorners || ctx.clearRect(left, top, size, size);
+//   ctx.beginPath();
+//   ctx.arc(left + size / 2, top + size / 2, size / 2, 0, 2 * Math.PI, false);
+//   ctx.strokeStyle = "#FF0000";
+//   ctx.lineWidth = 4;
+//   ctx.stroke();
+// }
+//
+// fabric.Object.prototype._drawControl = newControls;
+// fabric.Object.prototype.cornerSize = 22;
 
 function setupObjects() {
-  this.outer = new fabric.Rect({
+  global.outer = new fabric.Rect({
     width: canvas.getWidth(),
     height: canvas.getHeight(),
     top: 20,
@@ -66,7 +66,7 @@ function setupObjects() {
     selectable: false,
   });
 
-  this.box1 = new fabric.Rect({
+  global.box1 = new fabric.Rect({
     width: 240,
     height: 100,
     top: 20,
@@ -75,7 +75,7 @@ function setupObjects() {
     myType: "box",
   });
 
-  this.box2 = new fabric.Rect({
+  global.box2 = new fabric.Rect({
     width: 240,
     height: 100,
     top: 140,
@@ -84,7 +84,7 @@ function setupObjects() {
     myType: "box",
   });
 
-  this.box3 = new fabric.Rect({
+  global.box3 = new fabric.Rect({
     width: 100,
     height: 160,
     top: 20,
@@ -93,12 +93,12 @@ function setupObjects() {
     myType: "box",
   });
 
-  canvas.add(this.outer);
-  this.outer.center();
+  canvas.add(global.outer);
+  global.outer.center();
 
-  canvas.add(this.box1);
-  canvas.add(this.box2);
-  canvas.add(this.box3);
+  canvas.add(global.box1);
+  canvas.add(global.box2);
+  canvas.add(global.box3);
   let allBoxes = new fabric.ActiveSelection(
     canvas.getObjects().filter((obj) => obj.myType == "box"),
     { canvas: canvas }
@@ -129,10 +129,10 @@ function updateInfo() {
   info_zoom.innerHTML = canvas.getZoom().toFixed(2);
   info_vptTop.innerHTML = Math.round(canvas.viewportTransform[5]);
   info_vptLeft.innerHTML = Math.round(canvas.viewportTransform[4]);
-  info_centerLine_horizontal.innerHTML = this.centerLine_horizontal;
-  info_centerLine_vertical.innerHTML = this.centerLine_vertical;
-  info_alignmentLines_horizontal.innerHTML = this.alignmentLines_horizontal;
-  info_alignmentLines_vertical.innerHTML = this.alignmentLines_vertical;
+  info_centerLine_horizontal.innerHTML = global.centerLine_horizontal;
+  info_centerLine_vertical.innerHTML = global.centerLine_vertical;
+  info_alignmentLines_horizontal.innerHTML = global.alignmentLines_horizontal;
+  info_alignmentLines_vertical.innerHTML = global.alignmentLines_vertical;
 }
 
 // ------------------------------------
@@ -227,18 +227,18 @@ initAligningGuidelines(canvas);
  * Need to fix it by replacing callbacks with pub/sub kind of subscription model.
  * (or maybe use existing fabric.util.fire/observe (if it won't be too slow))
  */
-function initCenteringGuidelines(canvas) {
+function initCenteringGuidelines(canvas: fabric.Canvas) {
   let canvasWidth = canvas.getWidth(),
     canvasHeight = canvas.getHeight(),
     canvasWidthCenter = canvasWidth / 2,
     canvasHeightCenter = canvasHeight / 2,
-    canvasWidthCenterMap = {},
-    canvasHeightCenterMap = {},
+    canvasWidthCenterMap: any = {},
+    canvasHeightCenterMap: any = {},
     centerLineMargin = 4,
     centerLineColor = "purple",
     centerLineWidth = 2,
     ctx = canvas.getSelectionContext(),
-    viewportTransform;
+    viewportTransform: number[] = [1, 0, 0, 1, 0, 0];
 
   for (
     let i = canvasWidthCenter - centerLineMargin,
@@ -275,7 +275,7 @@ function initCenteringGuidelines(canvas) {
     );
   }
 
-  function showCenterLine(x1, y1, x2, y2) {
+  function showCenterLine(x1: number, y1: number, x2: number, y2: number) {
     const originXY = fabric.util.transformPoint(
         new fabric.Point(x1, y1),
         canvas.viewportTransform
@@ -296,14 +296,14 @@ function initCenteringGuidelines(canvas) {
     ctx.restore();
 
     /*
-    ctx.save()
-    ctx.strokeStyle = centerLineColor
-    ctx.lineWidth = centerLineWidth
-    ctx.beginPath()
-    ctx.moveTo(x1 * viewportTransform[0], y1 * viewportTransform[3])
-    ctx.lineTo(x2 * viewportTransform[0], y2 * viewportTransform[3])
-    ctx.stroke()
-    ctx.restore() */
+        ctx.save()
+        ctx.strokeStyle = centerLineColor
+        ctx.lineWidth = centerLineWidth
+        ctx.beginPath()
+        ctx.moveTo(x1 * viewportTransform[0], y1 * viewportTransform[3])
+        ctx.lineTo(x2 * viewportTransform[0], y2 * viewportTransform[3])
+        ctx.stroke()
+        ctx.restore() */
   }
 
   let afterRenderActions = [],
@@ -312,8 +312,8 @@ function initCenteringGuidelines(canvas) {
 
   canvas.on("mouse:down", () => {
     isInVerticalCenter = isInHorizontalCenter = null;
-    this.centerLine_horizontal = "";
-    this.centerLine_vertical = "";
+    global.centerLine_horizontal = "";
+    global.centerLine_vertical = "";
     updateInfo();
     viewportTransform = canvas.viewportTransform;
   });
@@ -348,8 +348,8 @@ function initCenteringGuidelines(canvas) {
   canvas.on("after:render", () => {
     if (isInVerticalCenter) {
       showVerticalCenterLine();
-      this.centerLine_horizontal = "";
-      this.centerLine_vertical =
+      global.centerLine_horizontal = "";
+      global.centerLine_vertical =
         canvasWidthCenter +
         0.5 +
         ", " +
@@ -362,7 +362,7 @@ function initCenteringGuidelines(canvas) {
 
     if (isInHorizontalCenter) {
       showHorizontalCenterLine();
-      this.centerLine_horizontal =
+      global.centerLine_horizontal =
         canvasWidthCenter +
         0.5 +
         ", " +
@@ -371,7 +371,7 @@ function initCenteringGuidelines(canvas) {
         (canvasWidthCenter + 0.5) +
         ", " +
         canvasHeight;
-      this.centerLine_vertical = "";
+      global.centerLine_vertical = "";
     }
 
     updateInfo();
@@ -390,27 +390,41 @@ function initCenteringGuidelines(canvas) {
 // ORIGINAL:
 // https://github.com/fabricjs/fabric.js/blob/master/lib/aligning_guidelines.js
 
+type VerticalLineCoords = {
+  x: number;
+  y1: number;
+  y2: number;
+};
+
+type HorizontalLineCoords = {
+  y: number;
+  x1: number;
+  x2: number;
+};
+
 // Original author:
 /**
  * Should objects be aligned by a bounding box?
  * [Bug] Scaled objects sometimes can not be aligned by edges
  *
  */
-function initAligningGuidelines(canvas) {
+function initAligningGuidelines(canvas: fabric.Canvas) {
   let ctx = canvas.getSelectionContext(),
     aligningLineOffset = 5,
     aligningLineMargin = 4,
     aligningLineWidth = 2,
     aligningLineColor = "lime",
-    viewportTransform,
+    viewportTransform = [1, 0, 0, 1, 0, 0],
     zoom = null,
-    verticalLines = [],
-    horizontalLines = [],
-    canvasContainer = document.getElementById("myCanvas"),
+    verticalLines: VerticalLineCoords[] = [],
+    horizontalLines: HorizontalLineCoords[] = [],
+    canvasContainer: HTMLCanvasElement = document.getElementById(
+      "myCanvas"
+    ) as HTMLCanvasElement,
     containerWidth = canvasContainer.offsetWidth,
     containerHeight = canvasContainer.offsetHeight;
 
-  function drawVerticalLine(coords) {
+  function drawVerticalLine(coords: VerticalLineCoords) {
     drawLine(
       // x1 是左边的边界，x2 是右边的边界
       // y1 是上边的边界，y2 是下边的边界
@@ -425,7 +439,7 @@ function initAligningGuidelines(canvas) {
     );
   }
 
-  function drawHorizontalLine(coords) {
+  function drawHorizontalLine(coords: HorizontalLineCoords) {
     drawLine(
       coords.x1 > coords.x2 ? coords.x2 : coords.x1,
       coords.y + 0.5,
@@ -434,7 +448,7 @@ function initAligningGuidelines(canvas) {
     );
   }
 
-  function drawLine(x1, y1, x2, y2) {
+  function drawLine(x1: number, y1: number, x2: number, y2: number) {
     /**
      *
      * originXY 是原点的左上角坐标
@@ -463,51 +477,14 @@ function initAligningGuidelines(canvas) {
     // ctx.lineWidth = aligningLineWidth
     // ctx.strokeStyle = aligningLineColor
     ctx.restore();
-
-    /*
-    ctx.save()
-    ctx.lineWidth = aligningLineWidth
-    ctx.strokeStyle = aligningLineColor
-    ctx.beginPath()
-    //console.log("x1 :" + x1)
-    //console.log("viewportTransform[4] :" + viewportTransform[4])
-    //console.log("zoom :" + zoom)
-    ctx.moveTo(
-      ( (x1 + viewportTransform[4]) * zoom),
-      ( (y1 + viewportTransform[5]) * zoom)
-    )
-    //console.log("-------")
-    //console.log("x1 :" + x1)
-    //console.log("viewportTransform[4] :" + viewportTransform[4])
-    //console.log("zoom :" + zoom)
-    //console.log("x :" + (x1 + canvas.viewportTransform[4]) * zoom)
-
-    ctx.lineTo(
-      ( (x2 + viewportTransform[4]) * zoom),
-      ( (y2 + viewportTransform[5]) * zoom)
-    )
-    ctx.stroke()
-    ctx.restore()
-    */
   }
 
   // 如果 value1 和 value2 的四舍五入后的距离小于等于定义的校准距离，那么返回 true
-  function isInRange(value1, value2) {
-    // 四舍五入一下先
+  function isInRange(value1: number, value2: number) {
     value1 = Math.round(value1);
     value2 = Math.round(value2);
-
     // 两个值的距离小于等于定义的校准距离，那么就返回 true 进行校准
     if (Math.abs(value1 - value2) <= aligningLineMargin) return true;
-
-    /**
-     *  这样写只会判断 value2 > value1 的情况，不会判断 value1 > value2 的情况，而我们要的应该是只要 value1, value2 的举例小于等于定义的校准距离，那么就返回 true
-     */
-    // for (var i = value1 - aligningLineMargin, len = value1 + aligningLineMargin; i <= len; i++) {
-    //   if (i === value2) {
-    //     return true
-    //   }
-    // }
     return false;
   }
 
@@ -522,8 +499,10 @@ function initAligningGuidelines(canvas) {
 
     verticalLines.length = horizontalLines.length = 0;
 
-    let activeObject = e.target,
-      canvasObjects = canvas.getObjects().filter((obj) => obj.myType === "box"),
+    let activeObject = e.target as fabric.Object;
+
+    let canvasObjects = canvas.getObjects(),
+      // .filter((obj) => obj.myType === "box"),
       activeObjCenterPoint = activeObject.getCenterPoint(),
       // 左侧的距离
       activeObjCenterPointToCanvasLeft = activeObjCenterPoint.x,
@@ -703,7 +682,6 @@ function initAligningGuidelines(canvas) {
                 "center"
               );
             }
-
           }
         }
       }
@@ -834,20 +812,14 @@ function initAligningGuidelines(canvas) {
   });
 
   canvas.on("mouse:wheel", (opt) => {
-    console.log("mouse:wheel");
-
     verticalLines.length = horizontalLines.length = 0;
   });
 
   canvas.on("before:render", function () {
-    console.log("before:render");
-
     canvas.clearContext(canvas.contextTop);
   });
 
   canvas.on("after:render", () => {
-    console.log("after:render");
-
     for (let i = verticalLines.length; i--; ) {
       drawVerticalLine(verticalLines[i]);
     }
@@ -855,8 +827,8 @@ function initAligningGuidelines(canvas) {
       drawHorizontalLine(horizontalLines[i]);
     }
 
-    this.alignmentLines_horizontal = JSON.stringify(horizontalLines, null, 4);
-    this.alignmentLines_vertical = JSON.stringify(verticalLines, null, 4);
+    global.alignmentLines_horizontal = JSON.stringify(horizontalLines, null, 4);
+    global.alignmentLines_vertical = JSON.stringify(verticalLines, null, 4);
     updateInfo();
 
     // console.log("activeObject left edge x is: " + canvas.getActiveObject().left)
@@ -871,8 +843,8 @@ function initAligningGuidelines(canvas) {
 
     verticalLines.length = horizontalLines.length = 0;
     canvas.renderAll();
-    //this.alignmentLines_horizontal = horizontalLines
-    //this.alignmentLines_vertical = verticalLines
+    //global.alignmentLines_horizontal = horizontalLines
+    //global.alignmentLines_vertical = verticalLines
     updateInfo();
   });
 }
