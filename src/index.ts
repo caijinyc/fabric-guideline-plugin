@@ -8,57 +8,30 @@ import { fabric } from "fabric";
 // SETUP
 // ==========================================
 
-const canvas = new fabric.Canvas("myCanvas");
+const fabricCanvas = new fabric.Canvas("myCanvas", {
+  backgroundColor: "#F5F5F5",
+});
+const clearGuideline = () =>
+  fabricCanvas.clearContext(fabricCanvas.getSelectionContext());
 
-canvas.backgroundColor = "#222222";
-const lastClientX = 0;
-const lastClientY = 0;
-const state = "default";
-const outer = null;
-const box1 = null;
-const box2 = null;
 const global: any = {};
 global.centerLine_horizontal = "";
 global.centerLine_vertical = "";
 global.alignmentLines_horizontal = "";
 global.alignmentLines_vertical = "";
 
+const ALIGNING_LINE_OFFSET = 5;
+const ALIGNING_LINE_MARGIN = 4;
+const ALIGNING_LINE_WIDTH = 1;
+const ALIGNING_LINE_COLOR = "#F68066";
+
 setupObjects();
 updateInfo();
 
-fabric.Object.prototype.set({
-  //cornerSize: 15,
-  //cornerStyle: 'circle',
-  // cornerColor: '#ffffff',
-  // transparentCorners: true,
-  //strokeWidth: 8,
-  // cornerlineWidth: 4,
-  // borderColor: "pink",
-  // borderScaleFactor: 6,
-});
-
-// // 修改控制锚点
-// function newControls(control, ctx, methodName, left, top) {
-//   // console.log("control is: " + control)
-//   if (!global.isControlVisible(control)) {
-//     return;
-//   }
-//   var size = global.cornerSize;
-//   global.transparentCorners || ctx.clearRect(left, top, size, size);
-//   ctx.beginPath();
-//   ctx.arc(left + size / 2, top + size / 2, size / 2, 0, 2 * Math.PI, false);
-//   ctx.strokeStyle = "#FF0000";
-//   ctx.lineWidth = 4;
-//   ctx.stroke();
-// }
-//
-// fabric.Object.prototype._drawControl = newControls;
-// fabric.Object.prototype.cornerSize = 22;
-
 function setupObjects() {
   global.outer = new fabric.Rect({
-    width: canvas.getWidth(),
-    height: canvas.getHeight(),
+    width: fabricCanvas.getWidth(),
+    height: fabricCanvas.getHeight(),
     top: 20,
     left: 20,
     stroke: "#ffffff",
@@ -93,15 +66,15 @@ function setupObjects() {
     myType: "box",
   });
 
-  canvas.add(global.outer);
+  fabricCanvas.add(global.outer);
   global.outer.center();
 
-  canvas.add(global.box1);
-  canvas.add(global.box2);
-  canvas.add(global.box3);
+  fabricCanvas.add(global.box1);
+  fabricCanvas.add(global.box2);
+  fabricCanvas.add(global.box3);
   let allBoxes = new fabric.ActiveSelection(
-    canvas.getObjects().filter((obj) => obj.myType == "box"),
-    { canvas: canvas }
+    fabricCanvas.getObjects().filter((obj) => obj.myType == "box"),
+    { canvas: fabricCanvas }
   );
   allBoxes.center();
   allBoxes.destroy();
@@ -126,9 +99,9 @@ function updateInfo() {
     "info_alignmentLines_vertical"
   );
 
-  info_zoom.innerHTML = canvas.getZoom().toFixed(2);
-  info_vptTop.innerHTML = Math.round(canvas.viewportTransform[5]);
-  info_vptLeft.innerHTML = Math.round(canvas.viewportTransform[4]);
+  info_zoom.innerHTML = fabricCanvas.getZoom().toFixed(2);
+  info_vptTop.innerHTML = Math.round(fabricCanvas.viewportTransform[5]);
+  info_vptLeft.innerHTML = Math.round(fabricCanvas.viewportTransform[4]);
   info_centerLine_horizontal.innerHTML = global.centerLine_horizontal;
   info_centerLine_vertical.innerHTML = global.centerLine_vertical;
   info_alignmentLines_horizontal.innerHTML = global.alignmentLines_horizontal;
@@ -138,7 +111,7 @@ function updateInfo() {
 // ------------------------------------
 // Reset
 // ------------------------------------
-let resetButton = document.getElementById("reset");
+let resetButton = document.getElementById("reset") as any;
 
 resetButton.addEventListener(
   "click",
@@ -149,9 +122,9 @@ resetButton.addEventListener(
 );
 
 function reset() {
-  canvas.remove(...canvas.getObjects());
+  fabricCanvas.remove(...fabricCanvas.getObjects());
   setupObjects();
-  canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+  fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
   updateInfo();
 }
 
@@ -162,7 +135,7 @@ function reset() {
 // ==========================================
 
 // MOUSEWHEEL ZOOM
-canvas.on("mouse:wheel", (opt) => {
+fabricCanvas.on("mouse:wheel", (opt) => {
   let delta = 0;
 
   // -------------------------------
@@ -180,8 +153,8 @@ canvas.on("mouse:wheel", (opt) => {
   }
   // -------------------------------
 
-  let pointer = canvas.getPointer(opt.e);
-  let zoom = canvas.getZoom();
+  let pointer = fabricCanvas.getPointer(opt.e);
+  let zoom = fabricCanvas.getZoom();
   zoom = zoom - delta / 10;
 
   // limit zoom in
@@ -197,22 +170,22 @@ canvas.on("mouse:wheel", (opt) => {
   //  y: opt.e.offsetY
   //}, zoom)
 
-  canvas.zoomToPoint(
-    new fabric.Point(canvas.width / 2, canvas.height / 2),
+  fabricCanvas.zoomToPoint(
+    new fabric.Point(fabricCanvas.width / 2, fabricCanvas.height / 2),
     zoom
   );
 
   opt.e.preventDefault();
   opt.e.stopPropagation();
 
-  canvas.renderAll();
-  canvas.calcOffset();
+  fabricCanvas.renderAll();
+  fabricCanvas.calcOffset();
 
-  updateInfo(canvas);
+  updateInfo(fabricCanvas);
 });
 
-initCenteringGuidelines(canvas);
-initAligningGuidelines(canvas);
+initCenteringGuidelines(fabricCanvas);
+// initAligningGuidelines(canvas);
 
 // ==========================================
 // CANVAS CENTER SNAPPING & ALIGNMENT GUIDELINES
@@ -259,30 +232,26 @@ function initCenteringGuidelines(canvas: fabric.Canvas) {
 
   function showVerticalCenterLine() {
     showCenterLine(
-      canvasWidthCenter + 0.5,
+      // canvasWidthCenter + 0.5,
+      canvasWidthCenter,
       0,
-      canvasWidthCenter + 0.5,
+      canvasWidthCenter,
       canvasHeight
     );
   }
 
   function showHorizontalCenterLine() {
-    showCenterLine(
-      0,
-      canvasHeightCenter + 0.5,
-      canvasWidth,
-      canvasHeightCenter + 0.5
-    );
+    showCenterLine(0, canvasHeightCenter, canvasWidth, canvasHeightCenter);
   }
 
   function showCenterLine(x1: number, y1: number, x2: number, y2: number) {
     const originXY = fabric.util.transformPoint(
         new fabric.Point(x1, y1),
-        canvas.viewportTransform
+        canvas.viewportTransform as number[]
       ),
-      dimmensions = fabric.util.transformPoint(
+      dimensions = fabric.util.transformPoint(
         new fabric.Point(x2, y2),
-        canvas.viewportTransform
+        canvas.viewportTransform as number[]
       );
     ctx.save();
     ctx.strokeStyle = centerLineColor;
@@ -291,19 +260,9 @@ function initCenteringGuidelines(canvas: fabric.Canvas) {
 
     ctx.moveTo(originXY.x, originXY.y);
 
-    ctx.lineTo(dimmensions.x, dimmensions.y);
+    ctx.lineTo(dimensions.x, dimensions.y);
     ctx.stroke();
     ctx.restore();
-
-    /*
-        ctx.save()
-        ctx.strokeStyle = centerLineColor
-        ctx.lineWidth = centerLineWidth
-        ctx.beginPath()
-        ctx.moveTo(x1 * viewportTransform[0], y1 * viewportTransform[3])
-        ctx.lineTo(x2 * viewportTransform[0], y2 * viewportTransform[3])
-        ctx.stroke()
-        ctx.restore() */
   }
 
   let afterRenderActions = [],
@@ -402,30 +361,48 @@ type HorizontalLineCoords = {
   x2: number;
 };
 
-// Original author:
-/**
- * Should objects be aligned by a bounding box?
- * [Bug] Scaled objects sometimes can not be aligned by edges
- *
- */
-function initAligningGuidelines(canvas: fabric.Canvas) {
-  let ctx = canvas.getSelectionContext(),
-    aligningLineOffset = 5,
-    aligningLineMargin = 4,
-    aligningLineWidth = 2,
-    aligningLineColor = "lime",
-    viewportTransform = [1, 0, 0, 1, 0, 0],
-    zoom = null,
-    verticalLines: VerticalLineCoords[] = [],
-    horizontalLines: HorizontalLineCoords[] = [],
-    canvasContainer: HTMLCanvasElement = document.getElementById(
-      "myCanvas"
-    ) as HTMLCanvasElement,
-    containerWidth = canvasContainer.offsetWidth,
-    containerHeight = canvasContainer.offsetHeight;
+class AlignGuidelines {
+  canvas: fabric.Canvas;
+  ctx: CanvasRenderingContext2D;
+  viewportTransform: any;
+  // zoom: number = 1;
+  verticalLines: VerticalLineCoords[] = [];
+  horizontalLines: HorizontalLineCoords[] = [];
 
-  function drawVerticalLine(coords: VerticalLineCoords) {
-    drawLine(
+  constructor(canvas: fabric.Canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getSelectionContext();
+  }
+
+  private drawLine(x1: number, y1: number, x2: number, y2: number) {
+    const ctx = this.ctx;
+    const originXY = fabric.util.transformPoint(
+        new fabric.Point(x1, y1),
+        this.canvas.viewportTransform as any
+      ),
+      dimensions = fabric.util.transformPoint(
+        new fabric.Point(x2, y2),
+        this.canvas.viewportTransform as any
+      );
+
+    // 使用 canvas 的 api 用来绘制辅助线
+    ctx.save();
+    ctx.lineWidth = ALIGNING_LINE_WIDTH;
+    ctx.strokeStyle = ALIGNING_LINE_COLOR;
+    ctx.beginPath();
+
+    ctx.moveTo(originXY.x, originXY.y);
+    ctx.lineTo(dimensions.x, dimensions.y);
+    ctx.stroke();
+
+    // 恢复这两玩意
+    // ctx.lineWidth = aligningLineWidth
+    // ctx.strokeStyle = aligningLineColor
+    ctx.restore();
+  }
+
+  private drawVerticalLine(coords: VerticalLineCoords) {
+    this.drawLine(
       // x1 是左边的边界，x2 是右边的边界
       // y1 是上边的边界，y2 是下边的边界
       /**
@@ -439,8 +416,8 @@ function initAligningGuidelines(canvas: fabric.Canvas) {
     );
   }
 
-  function drawHorizontalLine(coords: HorizontalLineCoords) {
-    drawLine(
+  private drawHorizontalLine(coords: HorizontalLineCoords) {
+    this.drawLine(
       coords.x1 > coords.x2 ? coords.x2 : coords.x1,
       coords.y + 0.5,
       coords.x2 > coords.x1 ? coords.x2 : coords.x1,
@@ -448,178 +425,197 @@ function initAligningGuidelines(canvas: fabric.Canvas) {
     );
   }
 
-  function drawLine(x1: number, y1: number, x2: number, y2: number) {
-    /**
-     *
-     * originXY 是原点的左上角坐标
-     */
-    const originXY = fabric.util.transformPoint(
-        new fabric.Point(x1, y1),
-        canvas.viewportTransform
-      ),
-      dimensions = fabric.util.transformPoint(
-        new fabric.Point(x2, y2),
-        canvas.viewportTransform
-      );
-
-    // 这部分代码就是使用 canvas 的 api 用来绘制辅助线
-    ctx.save();
-    ctx.lineWidth = aligningLineWidth;
-    ctx.strokeStyle = aligningLineColor;
-    ctx.beginPath();
-
-    ctx.moveTo(originXY.x, originXY.y);
-    ctx.lineTo(dimensions.x, dimensions.y);
-    // 绘制
-    ctx.stroke();
-
-    // 恢复这两玩意
-    // ctx.lineWidth = aligningLineWidth
-    // ctx.strokeStyle = aligningLineColor
-    ctx.restore();
+  private isInRange(value1: number, value2: number) {
+    return (
+      Math.abs(Math.round(value1) - Math.round(value2)) <= ALIGNING_LINE_MARGIN
+    );
   }
 
-  // 如果 value1 和 value2 的四舍五入后的距离小于等于定义的校准距离，那么返回 true
-  function isInRange(value1: number, value2: number) {
-    value1 = Math.round(value1);
-    value2 = Math.round(value2);
-    // 两个值的距离小于等于定义的校准距离，那么就返回 true 进行校准
-    if (Math.abs(value1 - value2) <= aligningLineMargin) return true;
-    return false;
+  private watchMouseDown() {
+    this.canvas.on("mouse:down", () => {
+      this.clearLinesMeta();
+      this.viewportTransform = this.canvas.viewportTransform as number[];
+    });
   }
 
-  canvas.on("mouse:down", function () {
-    verticalLines.length = horizontalLines.length = 0;
-    viewportTransform = canvas.viewportTransform;
-    zoom = canvas.getZoom();
-  });
+  private watchMouseUp() {
+    this.canvas.on("mouse:up", () => {
+      global.alignmentLines_horizontal = this.horizontalLines;
+      global.alignmentLines_vertical = this.verticalLines;
+      updateInfo();
 
-  canvas.on("object:moving", (e) => {
-    console.log("object:moving");
+      this.clearLinesMeta();
+      this.canvas.renderAll();
+    });
+  }
 
-    verticalLines.length = horizontalLines.length = 0;
+  private watchMouseWheel() {
+    this.canvas.on("mouse:wheel", () => {
+      this.clearLinesMeta();
+    });
+  }
 
-    let activeObject = e.target as fabric.Object;
+  private clearLinesMeta() {
+    this.verticalLines.length = this.horizontalLines.length = 0;
+  }
 
-    let canvasObjects = canvas.getObjects(),
-      // .filter((obj) => obj.myType === "box"),
-      activeObjCenterPoint = activeObject.getCenterPoint(),
-      // 左侧的距离
-      activeObjCenterPointToCanvasLeft = activeObjCenterPoint.x,
-      // 顶部的距离
-      activeObjCenterPointToCanvasTop = activeObjCenterPoint.y,
-      activeObjectBoundingRect = activeObject.getBoundingRect(),
-      // 宽高
-      activeObjectHeight =
-        activeObjectBoundingRect.height / viewportTransform[3],
-      activeObjectWidth = activeObjectBoundingRect.width / viewportTransform[0],
-      /**
-       * 通过中心点的位置和宽高就能计算出所有信息
-       */
-      horizontalInTheRange = false,
-      verticalInTheRange = false,
-      transform = canvas._currentTransform;
+  private getObjSize(obj: fabric.Object) {
+    const objBoundingRect = obj.getBoundingRect();
+    return {
+      objHeight: objBoundingRect.height / this.viewportTransform[3],
+      objWidth: objBoundingRect.width / this.viewportTransform[0],
+    };
+  }
 
-    const activeObjLeftToCanvasLeft =
-      activeObjCenterPointToCanvasLeft - activeObjectWidth / 2;
-    const activeObjRightToCanvasLeft =
-      activeObjCenterPointToCanvasLeft + activeObjectWidth / 2;
+  private getObjInfo(obj: fabric.Object) {
+    const objCenterPoint = obj.getCenterPoint();
+    const objBoundingRect = obj.getBoundingRect();
+    const relativeToCanvasPosition = this.calcObjRelativePositionToCanvas(obj);
 
-    const activeObjTopToCanvasTop =
-      activeObjCenterPointToCanvasTop - activeObjectHeight / 2;
-    const activeObjBottomToCanvasTop =
-      activeObjCenterPointToCanvasTop + activeObjectHeight / 2;
+    const {
+      objLeftToCanvasLeft,
+      objRightToCanvasLeft,
+      objTopToCanvasTop,
+      objBottomToCanvasTop,
+      objCenterPointToCanvasTop,
+      objCenterPointToCanvasLeft,
+    } = relativeToCanvasPosition;
 
-    const activeObjNeedDrawHorizontalSide = {
+    const objNeedDrawHorizontalSide: Record<string, Record<string, number>> = {
       top: {
-        y: activeObjTopToCanvasTop,
+        y: objTopToCanvasTop,
       },
       center: {
-        y: activeObjCenterPointToCanvasTop,
+        y: objCenterPointToCanvasTop,
       },
       bottom: {
-        y: activeObjBottomToCanvasTop,
+        y: objBottomToCanvasTop,
       },
     };
 
-    const activeObjNeedDrwVerticalSide = {
+    const objNeedDrawVerticalSide: Record<string, Record<string, number>> = {
       left: {
-        x: activeObjLeftToCanvasLeft,
+        x: objLeftToCanvasLeft,
       },
       center: {
-        x: activeObjCenterPointToCanvasLeft,
+        x: objCenterPointToCanvasLeft,
       },
       right: {
-        x: activeObjRightToCanvasLeft,
+        x: objRightToCanvasLeft,
       },
     };
 
-    /**
-     * 现在使用的是 activeObjectCenterLeft - activeObjectWidth / 2 来计算 left 距离
-     * 不直接使用 activeObjectBoundingRect.left 的原因是因为 e 触发的过程中，activeObjectBoundingRect.left 是不会发生变化的，只有重新触发事件才会发生变化
-     */
+    return {
+      ...this.getObjSize(obj),
+      objCenterPoint,
+      objBoundingRect,
+      relativeToCanvasPosition,
+      objNeedDrawVerticalSide,
+      objNeedDrawHorizontalSide,
+    };
+  }
 
-    if (!transform) return;
+  private calcObjRelativePositionToCanvas(obj: fabric.Object) {
+    const objCenterPoint = obj.getCenterPoint();
+    const { objWidth, objHeight } = this.getObjSize(obj);
 
-    // It should be trivial to DRY this up by encapsulating (repeating) creation of x1, x2, y1, and y2 into functions,
-    // but we're not doing it here for perf. reasons -- as this a function that's invoked on every mouse move
+    const objCenterPointToCanvasLeft = objCenterPoint.x;
+    const objCenterPointToCanvasTop = objCenterPoint.y;
+
+    const objLeftToCanvasLeft = objCenterPointToCanvasLeft - objWidth / 2;
+    const objRightToCanvasLeft = objLeftToCanvasLeft + objWidth;
+
+    const objTopToCanvasTop = objCenterPointToCanvasTop - objHeight / 2;
+    const objBottomToCanvasTop = objCenterPointToCanvasTop + objHeight / 2;
+
+    return {
+      objCenterPointToCanvasLeft,
+      objCenterPointToCanvasTop,
+
+      objLeftToCanvasLeft,
+      objRightToCanvasLeft,
+
+      objTopToCanvasTop,
+      objBottomToCanvasTop,
+    };
+  }
+
+  private moveActiveObjToNewPositionByCenterPoint(
+    x: number,
+    y: number,
+    activeObject: fabric.Object
+  ) {
+    activeObject.setPositionByOrigin(
+      new fabric.Point(x, y),
+      "center",
+      "center"
+    );
+  }
+
+  private watchObjectMoving() {
+    this.canvas.on("object:moving", (e) => {
+      this.clearLinesMeta();
+      const activeObject = e.target as fabric.Object;
+      const canvasObjects = this.canvas
+        .getObjects()
+        .filter((obj) => obj.myType === "box");
+      // @ts-ignore
+      const transform = this.canvas._currentTransform;
+      if (!transform) return;
+      this.traversAllObjects(activeObject, canvasObjects);
+    });
+  }
+
+  private traversAllObjects(
+    activeObject: fabric.Object,
+    canvasObjects: fabric.Object[]
+  ) {
+    const {
+      objHeight: activeObjHeight,
+      objWidth: activeObjectWidth,
+      relativeToCanvasPosition: activeObjInfoRelativePosition,
+      objCenterPoint: activeObjCenterPoint,
+      objNeedDrawHorizontalSide: activeObjNeedDrawHorizontalSide,
+      objNeedDrawVerticalSide: activeObjNeedDrawVerticalSide,
+    } = this.getObjInfo(activeObject);
+
+    const {
+      objLeftToCanvasLeft: activeObjLeftToCanvasLeft,
+      objTopToCanvasTop: activeObjTopToCanvasTop,
+      objBottomToCanvasTop: activeObjBottomToCanvasTop,
+      objCenterPointToCanvasTop: activeObjCenterPointToCanvasTop,
+      objCenterPointToCanvasLeft: activeObjCenterPointToCanvasLeft,
+    } = activeObjInfoRelativePosition;
+
+    let activeObjNewCenterPointToCanvasTop: number | undefined;
 
     // 开始遍例所有节点
     for (let i = canvasObjects.length; i--; ) {
       if (canvasObjects[i] === activeObject) continue;
 
-      let objectCenter = canvasObjects[i].getCenterPoint(),
-        objCenterToCanvasLeft = objectCenter.x,
-        objCenterToCanvasTop = objectCenter.y,
-        objBoundingRect = canvasObjects[i].getBoundingRect(),
-        objHeight = objBoundingRect.height / viewportTransform[3],
-        objWidth = objBoundingRect.width / viewportTransform[0];
+      const {
+        objWidth,
+        relativeToCanvasPosition,
+        objNeedDrawHorizontalSide,
+        objNeedDrawVerticalSide,
+      } = this.getObjInfo(canvasObjects[i]);
 
-      // object left side to the canvas left
-      const objLeftToCanvasLeft = objCenterToCanvasLeft - objWidth / 2;
-      // object right side to the left
-      const objRightToCanvasLeft = objCenterToCanvasLeft + objWidth / 2;
+      const { objLeftToCanvasLeft, objTopToCanvasTop, objBottomToCanvasTop } =
+        relativeToCanvasPosition;
 
-      const objTopToCanvasTop = objCenterToCanvasTop - objHeight / 2;
-      const objBottomToCanvasTop = objCenterToCanvasTop + objHeight / 2;
-
-      const objNeedDrawHorizontalSide = {
-        top: {
-          y: objTopToCanvasTop,
-        },
-        center: {
-          y: objCenterToCanvasTop,
-        },
-        bottom: {
-          y: objBottomToCanvasTop,
-        },
-      };
-
-      const objNeedDrawVerticalSide = {
-        left: {
-          x: objLeftToCanvasLeft,
-        },
-        center: {
-          x: objCenterToCanvasLeft,
-        },
-        right: {
-          x: objRightToCanvasLeft,
-        },
-      };
-
-      for (const key in activeObjNeedDrawHorizontalSide) {
-        for (const key2 in objNeedDrawHorizontalSide) {
+      for (const activeObjSide in activeObjNeedDrawHorizontalSide) {
+        for (const objSide in objNeedDrawHorizontalSide) {
           if (
-            isInRange(
-              activeObjNeedDrawHorizontalSide[key].y,
-              objNeedDrawHorizontalSide[key2].y
+            this.isInRange(
+              activeObjNeedDrawHorizontalSide[activeObjSide].y,
+              objNeedDrawHorizontalSide[objSide].y
             )
           ) {
-            horizontalInTheRange = true;
+            let x1: number,
+              x2: number,
+              y = objNeedDrawHorizontalSide[objSide].y;
 
-            if (key === "center") {
-              let x1, x2;
-
+            if (activeObjSide === "center") {
               if (activeObjLeftToCanvasLeft > objLeftToCanvasLeft) {
                 x1 = objLeftToCanvasLeft;
                 x2 = activeObjLeftToCanvasLeft + activeObjectWidth / 2;
@@ -627,14 +623,7 @@ function initAligningGuidelines(canvas: fabric.Canvas) {
                 x1 = activeObjLeftToCanvasLeft + activeObjectWidth / 2;
                 x2 = objLeftToCanvasLeft + objWidth;
               }
-              horizontalLines.push({
-                y: objNeedDrawHorizontalSide[key2].y,
-                x1,
-                x2,
-              });
             } else {
-              let x1, x2;
-
               if (activeObjLeftToCanvasLeft > objLeftToCanvasLeft) {
                 x1 = objLeftToCanvasLeft;
                 x2 = activeObjLeftToCanvasLeft + activeObjectWidth;
@@ -642,212 +631,163 @@ function initAligningGuidelines(canvas: fabric.Canvas) {
                 x1 = activeObjLeftToCanvasLeft;
                 x2 = objLeftToCanvasLeft + objWidth;
               }
-
-              horizontalLines.push({
-                y: objNeedDrawHorizontalSide[key2].y,
-                x1,
-                x2,
-              });
             }
 
-            if (key === "top") {
-              activeObject.setPositionByOrigin(
-                new fabric.Point(
-                  activeObjCenterPointToCanvasLeft,
-                  objNeedDrawHorizontalSide[key2].y + activeObjectHeight / 2
-                ),
-                "center",
-                "center"
+            this.horizontalLines.push({
+              y,
+              x1,
+              x2,
+            });
+
+            if (activeObjSide === "top") {
+              activeObjNewCenterPointToCanvasTop = y + activeObjHeight / 2;
+              this.moveActiveObjToNewPositionByCenterPoint(
+                activeObjCenterPointToCanvasLeft,
+                activeObjNewCenterPointToCanvasTop,
+                activeObject
               );
             }
 
-            if (key === "center") {
-              activeObject.setPositionByOrigin(
-                new fabric.Point(
-                  activeObjCenterPointToCanvasLeft,
-                  objNeedDrawHorizontalSide[key2].y
-                ),
-                "center",
-                "center"
+            if (activeObjSide === "center") {
+              activeObjNewCenterPointToCanvasTop = y;
+
+              this.moveActiveObjToNewPositionByCenterPoint(
+                activeObjCenterPointToCanvasLeft,
+                activeObjNewCenterPointToCanvasTop,
+                activeObject
               );
             }
 
-            if (key === "bottom") {
-              activeObject.setPositionByOrigin(
-                new fabric.Point(
-                  activeObjCenterPointToCanvasLeft,
-                  objNeedDrawHorizontalSide[key2].y - activeObjectHeight / 2
-                ),
-                "center",
-                "center"
+            if (activeObjSide === "bottom") {
+              activeObjNewCenterPointToCanvasTop = y - activeObjHeight / 2;
+              this.moveActiveObjToNewPositionByCenterPoint(
+                activeObjCenterPoint.x,
+                activeObjNewCenterPointToCanvasTop,
+                activeObject
               );
             }
           }
         }
       }
 
-      for (const key in activeObjNeedDrwVerticalSide) {
-        for (const key2 in objNeedDrawVerticalSide) {
+      for (const activeObjSide in activeObjNeedDrawVerticalSide) {
+        for (const objSide in objNeedDrawVerticalSide) {
+          console.log('activeObjNeedDrawVerticalSide[activeObjSide].x', activeObjNeedDrawVerticalSide[activeObjSide].x)
+          console.log('objNeedDrawVerticalSide[objSide].x', objNeedDrawVerticalSide[objSide].x)
           if (
-            isInRange(
-              activeObjNeedDrwVerticalSide[key].x,
-              objNeedDrawVerticalSide[key2].x
+            this.isInRange(
+              activeObjNeedDrawVerticalSide[activeObjSide].x,
+              objNeedDrawVerticalSide[objSide].x
             )
           ) {
-            verticalInTheRange = true;
-            verticalLines.push({
-              x: activeObjNeedDrwVerticalSide[key].x,
-              y1:
-                activeObjTopToCanvasTop > objTopToCanvasTop
-                  ? activeObjTopToCanvasTop
-                  : objTopToCanvasTop,
-              y2:
+            console.log('!!!!!!!!!!!!!!!')
+            const x = objNeedDrawVerticalSide[objSide].x;
+            let y1: number, y2: number;
+            if (activeObjSide === "center") {
+              y1 =
+                activeObjCenterPointToCanvasTop > objTopToCanvasTop
+                  ? objTopToCanvasTop
+                  : activeObjCenterPointToCanvasTop;
+              y2 =
+                activeObjCenterPointToCanvasTop > objBottomToCanvasTop
+                  ? activeObjCenterPointToCanvasTop
+                  : objBottomToCanvasTop;
+            } else {
+              y1 =
                 activeObjTopToCanvasTop > objTopToCanvasTop
                   ? objTopToCanvasTop
-                  : activeObjTopToCanvasTop,
+                  : activeObjTopToCanvasTop;
+              y2 =
+                activeObjBottomToCanvasTop > objBottomToCanvasTop
+                  ? activeObjBottomToCanvasTop
+                  : objBottomToCanvasTop;
+            }
+
+            this.verticalLines.push({
+              x,
+              y1,
+              y2,
             });
+
+            // 确保水平吸附和垂直吸附同时发生时，水平吸附生效
+            let newCenterPointToCanvasTop: number =
+              typeof activeObjNewCenterPointToCanvasTop === "number"
+                ? activeObjNewCenterPointToCanvasTop
+                : activeObjCenterPoint.y;
+
+            if (activeObjSide === "left") {
+              this.moveActiveObjToNewPositionByCenterPoint(
+                x + activeObjectWidth / 2,
+                newCenterPointToCanvasTop,
+                activeObject
+              );
+            }
+
+            if (activeObjSide === "center") {
+              this.moveActiveObjToNewPositionByCenterPoint(
+                x,
+                newCenterPointToCanvasTop,
+                activeObject
+              );
+            }
+
+            if (activeObjSide === "right") {
+              this.moveActiveObjToNewPositionByCenterPoint(
+                x - activeObjectWidth / 2,
+                newCenterPointToCanvasTop,
+                activeObject
+              );
+            }
           }
         }
       }
-
-      // // snap by the horizontal center line
-      // if (isInRange(objCenterToCanvasLeft, activeObjCenterPointToCanvasLeft)) {
-      //   verticalInTheRange = true
-      //   // 用来绘制辅助线
-      //   verticalLines.push({
-      //     x: objCenterToCanvasLeft,
-      //     y1: (objCenterToCanvasTop < activeObjCenterPointToCanvasTop)
-      //       ? (objTopToCanvasTop - aligningLineOffset)
-      //       : (objBottomToCanvasTop + aligningLineOffset),
-      //     y2: (activeObjCenterPointToCanvasTop > objCenterToCanvasTop)
-      //       ? (activeObjBottomToCanvasTop + aligningLineOffset)
-      //       : (activeObjTopToCanvasTop - aligningLineOffset)
-      //   })
-      //   activeObject.setPositionByOrigin(new fabric.Point(objCenterToCanvasLeft, activeObjCenterPointToCanvasTop), 'center', 'center');
-      // }
-      //
-      // // snap by the left edge
-      // if (isInRange(objLeftToCanvasLeft, activeObjLeftToCanvasLeft)) {
-      //   verticalInTheRange = true
-      //   verticalLines.push({
-      //     x: objLeftToCanvasLeft,
-      //     y1: (objCenterToCanvasTop < activeObjCenterPointToCanvasTop)
-      //       ? (objTopToCanvasTop - aligningLineOffset)
-      //       : (objBottomToCanvasTop + aligningLineOffset),
-      //     y2: (activeObjCenterPointToCanvasTop > objCenterToCanvasTop)
-      //       ? (activeObjBottomToCanvasTop + aligningLineOffset)
-      //       : (activeObjTopToCanvasTop - aligningLineOffset)
-      //   })
-      //   activeObject.setPositionByOrigin(new fabric.Point(objLeftToCanvasLeft + activeObjectWidth / 2, activeObjCenterPointToCanvasTop), 'center', 'center')
-      // }
-      //
-      // // snap by the right edge
-      // if (isInRange(objRightToCanvasLeft, activeObjRightToCanvasLeft)) {
-      //   verticalInTheRange = true
-      //   verticalLines.push({
-      //     x: objRightToCanvasLeft,
-      //     y1: (objCenterToCanvasTop < activeObjCenterPointToCanvasTop)
-      //       ? (objTopToCanvasTop - aligningLineOffset)
-      //       : (objBottomToCanvasTop + aligningLineOffset),
-      //     y2: (activeObjCenterPointToCanvasTop > objCenterToCanvasTop)
-      //       ? (activeObjBottomToCanvasTop + aligningLineOffset)
-      //       : (activeObjTopToCanvasTop - aligningLineOffset)
-      //   })
-      //   activeObject.setPositionByOrigin(new fabric.Point(objRightToCanvasLeft - activeObjectWidth / 2, activeObjCenterPointToCanvasTop), 'center', 'center')
-      // }
-      //
-      // // snap by the vertical center line
-      // if (isInRange(objCenterToCanvasTop, activeObjCenterPointToCanvasTop)) {
-      //   horizontalInTheRange = true;
-      //   horizontalLines.push({
-      //     y: objCenterToCanvasTop,
-      //     x1: (objCenterToCanvasLeft < activeObjCenterPointToCanvasLeft)
-      //       ? (objLeftToCanvasLeft - aligningLineOffset)
-      //       : (objRightToCanvasLeft + aligningLineOffset),
-      //     x2: (activeObjCenterPointToCanvasLeft > objCenterToCanvasLeft)
-      //       ? (activeObjRightToCanvasLeft + aligningLineOffset)
-      //       : (activeObjLeftToCanvasLeft - aligningLineOffset)
-      //   })
-      //   activeObject.setPositionByOrigin(new fabric.Point(activeObjCenterPointToCanvasLeft, objCenterToCanvasTop), 'center', 'center')
-      // }
-      //
-      // // snap by the top edge
-      // if (isInRange(objTopToCanvasTop, activeObjTopToCanvasTop)) {
-      //   horizontalInTheRange = true
-      //   horizontalLines.push({
-      //     y: objTopToCanvasTop,
-      //     x1: (objCenterToCanvasLeft < activeObjCenterPointToCanvasLeft)
-      //       ? (objLeftToCanvasLeft - aligningLineOffset)
-      //       : (objRightToCanvasLeft + aligningLineOffset),
-      //     x2: (activeObjCenterPointToCanvasLeft > objCenterToCanvasLeft)
-      //       ? (activeObjRightToCanvasLeft + aligningLineOffset)
-      //       : (activeObjLeftToCanvasLeft - aligningLineOffset)
-      //   })
-      //   activeObject.setPositionByOrigin(new fabric.Point(activeObjCenterPointToCanvasLeft, objTopToCanvasTop + activeObjectHeight / 2), 'center', 'center');
-      // }
-      //
-      // // snap by the bottom edge
-      // if (isInRange(objBottomToCanvasTop, activeObjBottomToCanvasTop)) {
-      //   horizontalInTheRange = true
-      //   horizontalLines.push({
-      //     y: objBottomToCanvasTop,
-      //     x1: (objCenterToCanvasLeft < activeObjCenterPointToCanvasLeft)
-      //       ? (objLeftToCanvasLeft - aligningLineOffset)
-      //       : (objRightToCanvasLeft + aligningLineOffset),
-      //     x2: (activeObjCenterPointToCanvasLeft > objCenterToCanvasLeft)
-      //       ? (activeObjRightToCanvasLeft + aligningLineOffset)
-      //       : (activeObjLeftToCanvasLeft - aligningLineOffset)
-      //   })
-      //   activeObject.setPositionByOrigin(new fabric.Point(activeObjCenterPointToCanvasLeft, objBottomToCanvasTop - activeObjectHeight / 2), 'center', 'center')
-      // }
     }
+  }
 
-    if (!horizontalInTheRange) {
-      horizontalLines.length = 0;
-    }
+  clearGuideline() {
+    this.canvas.clearContext(this.ctx);
+  }
 
-    if (!verticalInTheRange) {
-      verticalLines.length = 0;
-    }
-  });
+  watchRender() {
+    this.canvas.on("before:render", () => {
+      this.clearGuideline();
+    });
 
-  canvas.on("mouse:wheel", (opt) => {
-    verticalLines.length = horizontalLines.length = 0;
-  });
+    this.canvas.on("after:render", () => {
+      for (let i = this.verticalLines.length; i--; ) {
+        this.drawVerticalLine(this.verticalLines[i]);
+      }
+      for (let i = this.horizontalLines.length; i--; ) {
+        this.drawHorizontalLine(this.horizontalLines[i]);
+      }
 
-  canvas.on("before:render", function () {
-    canvas.clearContext(canvas.contextTop);
-  });
+      global.alignmentLines_horizontal = JSON.stringify(
+        this.horizontalLines,
+        null,
+        4
+      );
+      global.alignmentLines_vertical = JSON.stringify(
+        this.verticalLines,
+        null,
+        4
+      );
+      updateInfo();
 
-  canvas.on("after:render", () => {
-    for (let i = verticalLines.length; i--; ) {
-      drawVerticalLine(verticalLines[i]);
-    }
-    for (let i = horizontalLines.length; i--; ) {
-      drawHorizontalLine(horizontalLines[i]);
-    }
+      this.canvas.calcOffset();
+    });
+  }
 
-    global.alignmentLines_horizontal = JSON.stringify(horizontalLines, null, 4);
-    global.alignmentLines_vertical = JSON.stringify(verticalLines, null, 4);
-    updateInfo();
-
-    // console.log("activeObject left edge x is: " + canvas.getActiveObject().left)
-
-    //verticalLines.length = horizontalLines.length = 0
-
-    canvas.calcOffset();
-  });
-
-  canvas.on("mouse:up", () => {
-    console.log("after:render");
-
-    verticalLines.length = horizontalLines.length = 0;
-    canvas.renderAll();
-    //global.alignmentLines_horizontal = horizontalLines
-    //global.alignmentLines_vertical = verticalLines
-    updateInfo();
-  });
+  init() {
+    this.watchObjectMoving();
+    this.watchRender();
+    this.watchMouseDown();
+    this.watchMouseUp();
+    this.watchMouseWheel();
+  }
 }
+
+const drawLine = new AlignGuidelines(fabricCanvas);
+drawLine.init();
 
 /**
  * 获取选中的对象
