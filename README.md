@@ -1,10 +1,13 @@
 # fabric-guide-line
 
-Help you easily append guideline and auto snap to your fabric.
+Help you easily append guideline and auto snap to your fabric .
 
 ## Example
 
+
+```HTML
 <video src="./doc/example.mov" controls="controls"></video>
+```
 
 ## Usage
 
