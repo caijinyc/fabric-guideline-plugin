@@ -1,9 +1,12 @@
 {
   "name": "fabric-guideline-plugin",
-  "author": "Jin<me@caijin.tech>",
-  "version": "0.0.1",
-  "type": "module",
+  "author": "Jin <me@caijin.tech>",
+  "version": "0.0.2",
   "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "keywords": [
     "fabric",
     "fabricjs",
