@@ -1,4 +1,4 @@
-# fabric-guide-line
+# fabric-guideline-plugin
 
 🤩 Help you easily append guideline and auto-snap to your fabric.
 
