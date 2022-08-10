@@ -1,21 +1,29 @@
 # fabric-guideline-plugin
 
-🤩 Help you easily append guideline and auto-snap to your fabric.
+🤩 Help you easily append guidelines and auto-snap to your fabric.js canvas.
+
+## Features
+
+- 😝 Easily append guidelines to your fabric.js canvas
+- 🎨 Automatically snap to nearby elements
+- 🛠️ Customize guidelines' style and other options
+- 📦 Zero dependencies
 
 ## Example
 
-See  👉  [CodeSandbox](https://codesandbox.io/s/frosty-clarke-w85qe7?file=/src/App.tsx).
+See 👉 [CodeSandbox](https://codesandbox.io/s/frosty-clarke-w85qe7?file=/src/App.tsx).
 
 ## Quick Start
 
 ```shell
 npm install fabric-guideline-plugin --save
 ```
+
 After install, you can use it in your project.
 
 ```tsx
 import { AlignGuidelines } from "fabric-guideline-plugin";
-````
+```
 
 ## Usage
 
@@ -41,7 +49,7 @@ const guideline = new AlignGuidelines({
   aligningOptions: {
     lineColor: "#32D10A",
     lineWidth: 2,
-    lineMargin: 2
+    lineMargin: 2,
   },
 });
 ```
