@@ -84,12 +84,7 @@ export class AlignGuidelines {
     if (relativeToCanvasPosition.objRightToCanvasLeft !== coords.x) count++;
     if (count === 3) return;
 
-    this.drawLine(
-      coords.x,
-      Math.min(coords.y1, coords.y2),
-      coords.x,
-      Math.max(coords.y1, coords.y2)
-    );
+    this.drawLine(coords.x, Math.min(coords.y1, coords.y2), coords.x, Math.max(coords.y1, coords.y2));
   }
 
   private drawHorizontalLine(coords: HorizontalLineCoords) {
@@ -100,12 +95,7 @@ export class AlignGuidelines {
     if (relativeToCanvasPosition.objBottomToCanvasTop !== coords.y) count++;
     if (count === 3) return;
 
-    this.drawLine(
-      Math.min(coords.x1, coords.x2),
-      coords.y,
-      Math.max(coords.x1, coords.x2),
-      coords.y
-    );
+    this.drawLine(Math.min(coords.x1, coords.x2), coords.y, Math.max(coords.x1, coords.x2), coords.y);
   }
 
   private isInRange(value1: number, value2: number) {
@@ -217,10 +207,6 @@ export class AlignGuidelines {
     };
   }
 
-  private moveActiveObjToNewPositionByCenterPoint(x: number, y: number, activeObject: fabric.Object) {
-    activeObject.setPositionByOrigin(new fabric.Point(x, y), "center", "center");
-  }
-
   private watchObjectMoving() {
     this.canvas.on("object:moving", (e) => {
       this.clearLinesMeta();
@@ -247,45 +233,49 @@ export class AlignGuidelines {
       objHeight: activeObjHeight,
       objWidth: activeObjectWidth,
       relativeToCanvasPosition: activeObjInfoRelativePosition,
-      objCenterPoint: activeObjCenterPoint,
       objNeedDrawHorizontalSide: activeObjNeedDrawHorizontalSide,
       objNeedDrawVerticalSide: activeObjNeedDrawVerticalSide,
     } = this.getObjInfo(activeObject);
 
     const {
-      objLeftToCanvasLeft: activeObjLeftToCanvasLeft,
-      objRightToCanvasLeft: activeObjRightToCanvasLeft,
-      objTopToCanvasTop: activeObjTopToCanvasTop,
-      objBottomToCanvasTop: activeObjBottomToCanvasTop,
-      objCenterPointToCanvasTop: activeObjCenterPointToCanvasTop,
-      objCenterPointToCanvasLeft: activeObjCenterPointToCanvasLeft,
+      objLeftToCanvasLeft: activeObjLL,
+      objRightToCanvasLeft: activeObjRL,
+      objTopToCanvasTop: activeObjTT,
+      objBottomToCanvasTop: activeObjBT,
+      objCenterPointToCanvasTop: activeObjCT,
+      objCenterPointToCanvasLeft: activeObjCL,
     } = activeObjInfoRelativePosition;
 
-    let activeObjNewCenterPointToCanvasTop: number | undefined;
+    const snapXPoints: number[] = [];
+    const snapYPoints: number[] = [];
 
     for (let i = canvasObjects.length; i--; ) {
       if (canvasObjects[i] === activeObject) continue;
 
-      const { objWidth, relativeToCanvasPosition, objNeedDrawHorizontalSide, objNeedDrawVerticalSide } =
-        this.getObjInfo(canvasObjects[i]);
+      const { relativeToCanvasPosition, objNeedDrawHorizontalSide, objNeedDrawVerticalSide } = this.getObjInfo(
+        canvasObjects[i]
+      );
 
-      const { objLeftToCanvasLeft,objRightToCanvasLeft, objTopToCanvasTop, objBottomToCanvasTop } = relativeToCanvasPosition;
+      const {
+        objLeftToCanvasLeft: objLL,
+        objRightToCanvasLeft: objRL,
+        objTopToCanvasTop: objTT,
+        objBottomToCanvasTop: objBT,
+      } = relativeToCanvasPosition;
 
       for (const activeObjSide in activeObjNeedDrawHorizontalSide) {
         for (const objSide in objNeedDrawHorizontalSide) {
           if (this.isInRange(activeObjNeedDrawHorizontalSide[activeObjSide].y, objNeedDrawHorizontalSide[objSide].y)) {
-            let x1: number,
-              x2: number,
-              y = objNeedDrawHorizontalSide[objSide].y;
+            const y = objNeedDrawHorizontalSide[objSide].y;
+            let x1: number, x2: number;
 
             if (activeObjSide === "center") {
-              x1 = Math.min(activeObjCenterPointToCanvasLeft, objLeftToCanvasLeft,objRightToCanvasLeft);
-              x2 = Math.max(activeObjCenterPointToCanvasLeft, objLeftToCanvasLeft,objRightToCanvasLeft);
+              x1 = Math.min(activeObjCL, objLL, objRL);
+              x2 = Math.max(activeObjCL, objLL, objRL);
             } else {
-              x1 = Math.min(objLeftToCanvasLeft, activeObjLeftToCanvasLeft)
-              x2 = Math.max(objRightToCanvasLeft, activeObjRightToCanvasLeft);
+              x1 = Math.min(objLL, activeObjLL);
+              x2 = Math.max(objRL, activeObjRL);
             }
-
             this.horizontalLines.push({
               y,
               x1,
@@ -293,31 +283,11 @@ export class AlignGuidelines {
             });
 
             if (activeObjSide === "top") {
-              activeObjNewCenterPointToCanvasTop = y + activeObjHeight / 2;
-              this.moveActiveObjToNewPositionByCenterPoint(
-                activeObjCenterPointToCanvasLeft,
-                activeObjNewCenterPointToCanvasTop,
-                activeObject
-              );
-            }
-
-            if (activeObjSide === "center") {
-              activeObjNewCenterPointToCanvasTop = y;
-
-              this.moveActiveObjToNewPositionByCenterPoint(
-                activeObjCenterPointToCanvasLeft,
-                activeObjNewCenterPointToCanvasTop,
-                activeObject
-              );
-            }
-
-            if (activeObjSide === "bottom") {
-              activeObjNewCenterPointToCanvasTop = y - activeObjHeight / 2;
-              this.moveActiveObjToNewPositionByCenterPoint(
-                activeObjCenterPoint.x,
-                activeObjNewCenterPointToCanvasTop,
-                activeObject
-              );
+              snapYPoints.push(y + activeObjHeight / 2);
+            } else if (activeObjSide === "center") {
+              snapYPoints.push(y);
+            } else if (activeObjSide === "bottom") {
+              snapYPoints.push(y - activeObjHeight / 2);
             }
           }
         }
@@ -329,46 +299,45 @@ export class AlignGuidelines {
             const x = objNeedDrawVerticalSide[objSide].x;
             let y1: number, y2: number;
             if (activeObjSide === "center") {
-              y1 = Math.min(activeObjCenterPointToCanvasTop, objTopToCanvasTop);
-              y2 = Math.max(activeObjCenterPointToCanvasTop, objBottomToCanvasTop);
+              y1 = Math.min(activeObjCT, objTT);
+              y2 = Math.max(activeObjCT, objBT);
             } else {
-              y1 = Math.min(objTopToCanvasTop, activeObjTopToCanvasTop);
-              y2 = Math.max(objBottomToCanvasTop, activeObjBottomToCanvasTop);
+              y1 = Math.min(objTT, activeObjTT);
+              y2 = Math.max(objBT, activeObjBT);
             }
-
             this.verticalLines.push({
               x,
               y1,
               y2,
             });
 
-            // 确保水平吸附和垂直吸附同时发生时，水平吸附生效
-            let newCenterPointToCanvasTop: number =
-              typeof activeObjNewCenterPointToCanvasTop === "number"
-                ? activeObjNewCenterPointToCanvasTop
-                : activeObjCenterPoint.y;
-
             if (activeObjSide === "left") {
-              this.moveActiveObjToNewPositionByCenterPoint(
-                x + activeObjectWidth / 2,
-                newCenterPointToCanvasTop,
-                activeObject
-              );
-            }
-
-            if (activeObjSide === "center") {
-              this.moveActiveObjToNewPositionByCenterPoint(x, newCenterPointToCanvasTop, activeObject);
-            }
-
-            if (activeObjSide === "right") {
-              this.moveActiveObjToNewPositionByCenterPoint(
-                x - activeObjectWidth / 2,
-                newCenterPointToCanvasTop,
-                activeObject
-              );
+              snapXPoints.push(x + activeObjectWidth / 2);
+            } else if (activeObjSide === "center") {
+              snapXPoints.push(x);
+            } else if (activeObjSide === "right") {
+              snapXPoints.push(x - activeObjectWidth / 2);
             }
           }
         }
+      }
+
+      if (snapXPoints.length || snapYPoints.length) {
+        const sortPoints = (list: number[], originPoint: number) => {
+          if (!list.length) return originPoint;
+          return list
+            .map((val) => ({
+              abs: Math.abs(originPoint - val),
+              val,
+            }))
+            .sort((a, b) => a.abs - b.abs)[0].val;
+        };
+        activeObject.setPositionByOrigin(
+          // auto snap nearest object, record all the snap points, and then find the nearest one
+          new fabric.Point(sortPoints(snapXPoints, activeObjCL), sortPoints(snapYPoints, activeObjCT)),
+          "center",
+          "center"
+        );
       }
     }
   }
