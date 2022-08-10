@@ -77,24 +77,18 @@ export class AlignGuidelines {
   }
 
   private drawVerticalLine(coords: VerticalLineCoords) {
-    let count = 0;
-    const { relativeToCanvasPosition } = this.getObjInfo(this.activeObj);
-    if (relativeToCanvasPosition.objLeftToCanvasLeft !== coords.x) count++;
-    if (relativeToCanvasPosition.objCenterPointToCanvasLeft !== coords.x) count++;
-    if (relativeToCanvasPosition.objRightToCanvasLeft !== coords.x) count++;
-    if (count === 3) return;
-
+    const {
+      relativeToCanvasPosition: { ll: ll, cl: cl, rl: rl },
+    } = this.getObjInfo(this.activeObj);
+    if (ll !== coords.x && cl !== coords.x && rl !== coords.x) return;
     this.drawLine(coords.x, Math.min(coords.y1, coords.y2), coords.x, Math.max(coords.y1, coords.y2));
   }
 
   private drawHorizontalLine(coords: HorizontalLineCoords) {
-    let count = 0;
-    const { relativeToCanvasPosition } = this.getObjInfo(this.activeObj);
-    if (relativeToCanvasPosition.objTopToCanvasTop !== coords.y) count++;
-    if (relativeToCanvasPosition.objCenterPointToCanvasTop !== coords.y) count++;
-    if (relativeToCanvasPosition.objBottomToCanvasTop !== coords.y) count++;
-    if (count === 3) return;
-
+    const {
+      relativeToCanvasPosition: { tt: tt, ct: ct, bt: bt },
+    } = this.getObjInfo(this.activeObj);
+    if (tt !== coords.y && ct !== coords.y && bt !== coords.y) return;
     this.drawLine(Math.min(coords.x1, coords.x2), coords.y, Math.max(coords.x1, coords.x2), coords.y);
   }
 
@@ -139,37 +133,18 @@ export class AlignGuidelines {
     const objBoundingRect = obj.getBoundingRect();
     const relativeToCanvasPosition = this.calcObjRelativePositionToCanvas(obj);
 
-    const {
-      objLeftToCanvasLeft,
-      objRightToCanvasLeft,
-      objTopToCanvasTop,
-      objBottomToCanvasTop,
-      objCenterPointToCanvasTop,
-      objCenterPointToCanvasLeft,
-    } = relativeToCanvasPosition;
+    const { ll, rl, tt, bt, ct, cl } = relativeToCanvasPosition;
 
     const objNeedDrawHorizontalSide: Record<string, Record<string, number>> = {
-      top: {
-        y: objTopToCanvasTop,
-      },
-      center: {
-        y: objCenterPointToCanvasTop,
-      },
-      bottom: {
-        y: objBottomToCanvasTop,
-      },
+      top: { y: tt },
+      center: { y: ct },
+      bottom: { y: bt },
     };
 
     const objNeedDrawVerticalSide: Record<string, Record<string, number>> = {
-      left: {
-        x: objLeftToCanvasLeft,
-      },
-      center: {
-        x: objCenterPointToCanvasLeft,
-      },
-      right: {
-        x: objRightToCanvasLeft,
-      },
+      left: { x: ll },
+      center: { x: cl },
+      right: { x: rl },
     };
 
     return {
@@ -196,14 +171,14 @@ export class AlignGuidelines {
     const objBottomToCanvasTop = objCenterPointToCanvasTop + objHeight / 2;
 
     return {
-      objCenterPointToCanvasLeft,
-      objCenterPointToCanvasTop,
+      cl: objCenterPointToCanvasLeft,
+      ct: objCenterPointToCanvasTop,
 
-      objLeftToCanvasLeft,
-      objRightToCanvasLeft,
+      ll: objLeftToCanvasLeft,
+      rl: objRightToCanvasLeft,
 
-      objTopToCanvasTop,
-      objBottomToCanvasTop,
+      tt: objTopToCanvasTop,
+      bt: objBottomToCanvasTop,
     };
   }
 
@@ -238,12 +213,12 @@ export class AlignGuidelines {
     } = this.getObjInfo(activeObject);
 
     const {
-      objLeftToCanvasLeft: activeObjLL,
-      objRightToCanvasLeft: activeObjRL,
-      objTopToCanvasTop: activeObjTT,
-      objBottomToCanvasTop: activeObjBT,
-      objCenterPointToCanvasTop: activeObjCT,
-      objCenterPointToCanvasLeft: activeObjCL,
+      ll: activeObjLL,
+      rl: activeObjRL,
+      tt: activeObjTT,
+      bt: activeObjBT,
+      ct: activeObjCT,
+      cl: activeObjCL,
     } = activeObjInfoRelativePosition;
 
     const snapXPoints: number[] = [];
@@ -256,12 +231,7 @@ export class AlignGuidelines {
         canvasObjects[i]
       );
 
-      const {
-        objLeftToCanvasLeft: objLL,
-        objRightToCanvasLeft: objRL,
-        objTopToCanvasTop: objTT,
-        objBottomToCanvasTop: objBT,
-      } = relativeToCanvasPosition;
+      const { ll: objLL, rl: objRL, tt: objTT, bt: objBT } = relativeToCanvasPosition;
 
       for (const activeObjSide in activeObjNeedDrawHorizontalSide) {
         for (const objSide in objNeedDrawHorizontalSide) {
@@ -276,11 +246,7 @@ export class AlignGuidelines {
               x1 = Math.min(objLL, activeObjLL);
               x2 = Math.max(objRL, activeObjRL);
             }
-            this.horizontalLines.push({
-              y,
-              x1,
-              x2,
-            });
+            this.horizontalLines.push({ y, x1, x2 });
 
             if (activeObjSide === "top") {
               snapYPoints.push(y + activeObjHeight / 2);
@@ -305,11 +271,7 @@ export class AlignGuidelines {
               y1 = Math.min(objTT, activeObjTT);
               y2 = Math.max(objBT, activeObjBT);
             }
-            this.verticalLines.push({
-              x,
-              y1,
-              y2,
-            });
+            this.verticalLines.push({ x, y1, y2 });
 
             if (activeObjSide === "left") {
               snapXPoints.push(x + activeObjectWidth / 2);
