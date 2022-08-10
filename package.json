@@ -1,7 +1,7 @@
 {
   "name": "fabric-guideline-plugin",
   "author": "Jin <me@caijin.tech>",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",

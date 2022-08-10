@@ -86,9 +86,9 @@ export class AlignGuidelines {
 
     this.drawLine(
       coords.x,
-      coords.y1 > coords.y2 ? coords.y2 : coords.y1,
+      Math.min(coords.y1, coords.y2),
       coords.x,
-      coords.y2 > coords.y1 ? coords.y2 : coords.y1
+      Math.max(coords.y1, coords.y2)
     );
   }
 
@@ -101,9 +101,9 @@ export class AlignGuidelines {
     if (count === 3) return;
 
     this.drawLine(
-      coords.x1 > coords.x2 ? coords.x2 : coords.x1,
+      Math.min(coords.x1, coords.x2),
       coords.y,
-      coords.x2 > coords.x1 ? coords.x2 : coords.x1,
+      Math.max(coords.x1, coords.x2),
       coords.y
     );
   }
@@ -254,6 +254,7 @@ export class AlignGuidelines {
 
     const {
       objLeftToCanvasLeft: activeObjLeftToCanvasLeft,
+      objRightToCanvasLeft: activeObjRightToCanvasLeft,
       objTopToCanvasTop: activeObjTopToCanvasTop,
       objBottomToCanvasTop: activeObjBottomToCanvasTop,
       objCenterPointToCanvasTop: activeObjCenterPointToCanvasTop,
@@ -268,7 +269,7 @@ export class AlignGuidelines {
       const { objWidth, relativeToCanvasPosition, objNeedDrawHorizontalSide, objNeedDrawVerticalSide } =
         this.getObjInfo(canvasObjects[i]);
 
-      const { objLeftToCanvasLeft, objTopToCanvasTop, objBottomToCanvasTop } = relativeToCanvasPosition;
+      const { objLeftToCanvasLeft,objRightToCanvasLeft, objTopToCanvasTop, objBottomToCanvasTop } = relativeToCanvasPosition;
 
       for (const activeObjSide in activeObjNeedDrawHorizontalSide) {
         for (const objSide in objNeedDrawHorizontalSide) {
@@ -278,21 +279,11 @@ export class AlignGuidelines {
               y = objNeedDrawHorizontalSide[objSide].y;
 
             if (activeObjSide === "center") {
-              if (activeObjLeftToCanvasLeft > objLeftToCanvasLeft) {
-                x1 = objLeftToCanvasLeft;
-                x2 = activeObjLeftToCanvasLeft + activeObjectWidth / 2;
-              } else {
-                x1 = activeObjLeftToCanvasLeft + activeObjectWidth / 2;
-                x2 = objLeftToCanvasLeft + objWidth;
-              }
+              x1 = Math.min(activeObjCenterPointToCanvasLeft, objLeftToCanvasLeft,objRightToCanvasLeft);
+              x2 = Math.max(activeObjCenterPointToCanvasLeft, objLeftToCanvasLeft,objRightToCanvasLeft);
             } else {
-              if (activeObjLeftToCanvasLeft > objLeftToCanvasLeft) {
-                x1 = objLeftToCanvasLeft;
-                x2 = activeObjLeftToCanvasLeft + activeObjectWidth;
-              } else {
-                x1 = activeObjLeftToCanvasLeft;
-                x2 = objLeftToCanvasLeft + objWidth;
-              }
+              x1 = Math.min(objLeftToCanvasLeft, activeObjLeftToCanvasLeft)
+              x2 = Math.max(objRightToCanvasLeft, activeObjRightToCanvasLeft);
             }
 
             this.horizontalLines.push({
@@ -338,18 +329,11 @@ export class AlignGuidelines {
             const x = objNeedDrawVerticalSide[objSide].x;
             let y1: number, y2: number;
             if (activeObjSide === "center") {
-              y1 =
-                activeObjCenterPointToCanvasTop > objTopToCanvasTop
-                  ? objTopToCanvasTop
-                  : activeObjCenterPointToCanvasTop;
-              y2 =
-                activeObjCenterPointToCanvasTop > objBottomToCanvasTop
-                  ? activeObjCenterPointToCanvasTop
-                  : objBottomToCanvasTop;
+              y1 = Math.min(activeObjCenterPointToCanvasTop, objTopToCanvasTop);
+              y2 = Math.max(activeObjCenterPointToCanvasTop, objBottomToCanvasTop);
             } else {
-              y1 = activeObjTopToCanvasTop > objTopToCanvasTop ? objTopToCanvasTop : activeObjTopToCanvasTop;
-              y2 =
-                activeObjBottomToCanvasTop > objBottomToCanvasTop ? activeObjBottomToCanvasTop : objBottomToCanvasTop;
+              y1 = Math.min(objTopToCanvasTop, activeObjTopToCanvasTop);
+              y2 = Math.max(objBottomToCanvasTop, activeObjBottomToCanvasTop);
             }
 
             this.verticalLines.push({
