@@ -202,19 +202,19 @@ export class AlignGuidelines {
         let newCoords = objCoords;
         if (canvasObjects[i].angle !== 0) {
           // 当对象被旋转时，需要忽略一些坐标，只取最上、下边的坐标（参考 figma）
-          let t: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
-          let b: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
+          let topPoint: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
+          let bottomPoint: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
           Keys(objCoords).forEach((key) => {
-            if (objCoords[key].y < t[1].y) {
-              t = [key, objCoords[key]];
+            if (objCoords[key].y < topPoint[1].y) {
+              topPoint = [key, objCoords[key]];
             }
-            if (objCoords[key].y > b[1].y) {
-              b = [key, objCoords[key]];
+            if (objCoords[key].y > bottomPoint[1].y) {
+              bottomPoint = [key, objCoords[key]];
             }
           });
           newCoords = {
-            [t[0]]: t[1],
-            [b[0]]: b[1],
+            [topPoint[0]]: topPoint[1],
+            [bottomPoint[0]]: bottomPoint[1],
             c: objCoords.c,
           } as any;
         }
@@ -234,7 +234,6 @@ export class AlignGuidelines {
       Keys(movingCoords).forEach((activeObjPoint) => {
         let newCoords = objCoords;
         if (canvasObjects[i].angle !== 0) {
-          // 当对象被旋转时，需要忽略一些坐标，只取最上、下边的坐标
           let l: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
           let r: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
 
