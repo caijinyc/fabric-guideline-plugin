@@ -64,22 +64,38 @@ function setupObjects() {
     myType: "box",
   });
 
-  const genRect = () =>
-    new fabric.Rect({
-      width: 100,
-      height: 160,
-      top: 20,
-      left: 280,
-      fill: "#cf8aff",
-      myType: "box",
-    });
-
   fabricCanvas.add(global.outer);
   global.outer.center();
 
   fabricCanvas.add(global.box1);
   fabricCanvas.add(global.box2);
   fabricCanvas.add(global.box3);
+
+  const genRect = (
+    {angle}: {
+      angle?: number;
+    } = { angle: 0 }
+  ) => {
+    return new fabric.Rect({
+      width: Math.floor(Math.random() * 300),
+      height: Math.floor(Math.random() * 300),
+      top: Math.floor(Math.random() * fabricCanvas.getHeight()),
+      left: Math.floor(Math.random() * fabricCanvas.getWidth()),
+      fill: "#" + Math.floor(Math.random() * 16777215).toString(16),
+      angle: angle,
+      myType: "box",
+    });
+  };
+
+  const count = 10;
+  const rotateCount = 5;
+  for (let i = 0; i < count; i++) {
+    if (i < rotateCount) {
+      fabricCanvas.add(genRect({ angle: Math.floor(Math.random() * 360) }));
+    } else {
+      fabricCanvas.add(genRect());
+    }
+  }
   let allBoxes = new fabric.ActiveSelection(
     fabricCanvas.getObjects().filter((obj) => obj.myType == "box"),
     { canvas: fabricCanvas }
