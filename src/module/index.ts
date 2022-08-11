@@ -22,6 +22,13 @@ global.alignmentLines_vertical = "";
 
 setupObjects();
 
+function generateLightColorRgb() {
+  const red = Math.floor((1 + Math.random()) * 256/2);
+  const green = Math.floor((1 + Math.random()) * 256/2);
+  const blue = Math.floor((1 + Math.random()) * 256/2);
+  return "rgb(" + red + ", " + green + ", " + blue + ")";
+}
+
 function setupObjects() {
   global.outer = new fabric.Rect({
     width: fabricCanvas.getWidth(),
@@ -30,46 +37,12 @@ function setupObjects() {
     left: 20,
     stroke: "#ffffff",
     evented: false,
-    fill: "#f3f3f3",
+    fill: "#ececec",
     selectable: false,
-  });
-
-  global.box1 = new fabric.Rect({
-    name: "box1",
-    width: 240,
-    height: 100,
-    top: 20,
-    left: 20,
-    fill: "#fff28a",
-    myType: "box",
-  });
-
-  global.box2 = new fabric.Rect({
-    name: "box2",
-    width: 240,
-    height: 100,
-    top: 140,
-    left: 20,
-    fill: "#ff8a8a",
-    myType: "box",
-  });
-
-  global.box3 = new fabric.Rect({
-    name: "box3",
-    width: 100,
-    height: 160,
-    top: 20,
-    left: 280,
-    fill: "#cf8aff",
-    myType: "box",
   });
 
   fabricCanvas.add(global.outer);
   global.outer.center();
-
-  fabricCanvas.add(global.box1);
-  fabricCanvas.add(global.box2);
-  fabricCanvas.add(global.box3);
 
   const genRect = (
     {angle}: {
@@ -81,7 +54,7 @@ function setupObjects() {
       height: Math.floor(Math.random() * 300),
       top: Math.floor(Math.random() * fabricCanvas.getHeight()),
       left: Math.floor(Math.random() * fabricCanvas.getWidth()),
-      fill: "#" + Math.floor(Math.random() * 16777215).toString(16),
+      fill: generateLightColorRgb(),
       angle: angle,
       myType: "box",
     });
