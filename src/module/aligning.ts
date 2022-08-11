@@ -21,7 +21,7 @@ type NewCoords = NonNullable<fabric.Object["aCoords"]> & {
 
 export class AlignGuidelines {
   aligningLineMargin = 4;
-  aligningLineWidth = 1;
+  aligningLineWidth = 0.75;
   aligningLineColor = "#F68066";
   ignoreObjTypes: IgnoreObjTypes = [];
   pickObjTypes: IgnoreObjTypes = [];
@@ -63,7 +63,7 @@ export class AlignGuidelines {
   private drawSign(x: number, y: number) {
     const ctx = this.ctx;
 
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.5;
     ctx.strokeStyle = this.aligningLineColor;
     ctx.beginPath();
 
@@ -113,7 +113,7 @@ export class AlignGuidelines {
   }
 
   private isInRange(value1: number, value2: number) {
-    return Math.abs(Math.round(value1) - Math.round(value2)) <= this.aligningLineMargin;
+    return Math.abs(Math.round(value1) - Math.round(value2)) <= (this.aligningLineMargin / this.canvas.getZoom());
   }
 
   private watchMouseDown() {

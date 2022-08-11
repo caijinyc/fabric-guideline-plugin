@@ -288,6 +288,7 @@ const guideline = new AlignGuidelines({
   pickObjTypes: [{ key: "myType", value: "box" }],
   aligningOptions: {
     lineColor: "#32D10A",
+    lineWidth: 0.5,
   },
 });
 guideline.init();

@@ -6,6 +6,7 @@
 
 - 😝 Easily append guidelines to your fabric.js canvas
 - 🎨 Automatically snap to nearby elements
+- 🤖 Automatically adjust the auto-snap threshold when the window is zoomed
 - 🛠️ Customize guidelines' style and other options
 - 📦 Zero dependencies
 
