@@ -60,6 +60,21 @@ export class AlignGuidelines {
     }
   }
 
+  private drawSign(x: number, y: number) {
+    const ctx = this.ctx;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = this.aligningLineColor;
+    ctx.beginPath();
+
+    const size = 2;
+    ctx.moveTo(x - size, y - size);
+    ctx.lineTo(x + size, y + size);
+    ctx.moveTo(x + size, y - size);
+    ctx.lineTo(x - size, y + size);
+    ctx.stroke();
+  }
+
   private drawLine(x1: number, y1: number, x2: number, y2: number) {
     const ctx = this.ctx;
     const point1 = fabric.util.transformPoint(new fabric.Point(x1, y1), this.canvas.viewportTransform as any);
@@ -73,7 +88,11 @@ export class AlignGuidelines {
 
     ctx.moveTo(point1.x, point1.y);
     ctx.lineTo(point2.x, point2.y);
+
     ctx.stroke();
+
+    this.drawSign(point1.x, point1.y);
+    this.drawSign(point2.x, point2.y);
 
     // 恢复这两玩意
     // ctx.lineWidth = aligningLineWidth
