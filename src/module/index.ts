@@ -30,11 +30,12 @@ function setupObjects() {
     left: 20,
     stroke: "#ffffff",
     evented: false,
-    fill: '#f3f3f3',
+    fill: "#f3f3f3",
     selectable: false,
   });
 
   global.box1 = new fabric.Rect({
+    name: "box1",
     width: 240,
     height: 100,
     top: 20,
@@ -44,6 +45,7 @@ function setupObjects() {
   });
 
   global.box2 = new fabric.Rect({
+    name: "box2",
     width: 240,
     height: 100,
     top: 140,
@@ -53,6 +55,7 @@ function setupObjects() {
   });
 
   global.box3 = new fabric.Rect({
+    name: "box3",
     width: 100,
     height: 160,
     top: 20,
@@ -61,14 +64,15 @@ function setupObjects() {
     myType: "box",
   });
 
-  const genRect = () => new fabric.Rect({
-    width: 100,
-    height: 160,
-    top: 20,
-    left: 280,
-    fill: "#cf8aff",
-    myType: "box",
-  })
+  const genRect = () =>
+    new fabric.Rect({
+      width: 100,
+      height: 160,
+      top: 20,
+      left: 280,
+      fill: "#cf8aff",
+      myType: "box",
+    });
 
   fabricCanvas.add(global.outer);
   global.outer.center();
@@ -151,7 +155,7 @@ fabricCanvas.on("mouse:wheel", (opt) => {
   fabricCanvas.calcOffset();
 });
 
-initCenteringGuidelines(fabricCanvas);
+// initCenteringGuidelines(fabricCanvas);
 // initAligningGuidelines(canvas);
 
 // ==========================================
@@ -176,7 +180,7 @@ function initCenteringGuidelines(canvas: fabric.Canvas) {
     canvasHeightCenterMap: any = {},
     centerLineMargin = 4,
     centerLineColor = "purple",
-    centerLineWidth = 2,
+    centerLineWidth = 1,
     ctx = canvas.getSelectionContext(),
     viewportTransform: number[] = [1, 0, 0, 1, 0, 0];
 
