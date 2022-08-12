@@ -101,19 +101,19 @@ export class AlignGuidelines {
   }
 
   private drawVerticalLine(coords: VerticalLineCoords) {
-    const movingCoords = this.getObjMovingCoords(this.activeObj);
-    if (!Keys(movingCoords).some((key) => Math.abs(movingCoords[key].x - coords.x) < 1)) return;
+    const movingCoords = this.getObjDraggingObjCoords(this.activeObj);
+    if (!Keys(movingCoords).some((key) => Math.abs(movingCoords[key].x - coords.x) < 0.0001)) return;
     this.drawLine(coords.x, Math.min(coords.y1, coords.y2), coords.x, Math.max(coords.y1, coords.y2));
   }
 
   private drawHorizontalLine(coords: HorizontalLineCoords) {
-    const movingCoords = this.getObjMovingCoords(this.activeObj);
-    if (!Keys(movingCoords).some((key) => Math.abs(movingCoords[key].y - coords.y) < 1)) return;
+    const movingCoords = this.getObjDraggingObjCoords(this.activeObj);
+    if (!Keys(movingCoords).some((key) => Math.abs(movingCoords[key].y - coords.y) < 0.0001)) return;
     this.drawLine(Math.min(coords.x1, coords.x2), coords.y, Math.max(coords.x1, coords.x2), coords.y);
   }
 
   private isInRange(value1: number, value2: number) {
-    return Math.abs(Math.round(value1) - Math.round(value2)) <= (this.aligningLineMargin / this.canvas.getZoom());
+    return Math.abs(Math.round(value1) - Math.round(value2)) <= this.aligningLineMargin / this.canvas.getZoom();
   }
 
   private watchMouseDown() {
@@ -161,7 +161,7 @@ export class AlignGuidelines {
     });
   }
 
-  private getObjMovingCoords(activeObject: fabric.Object) {
+  private getObjDraggingObjCoords(activeObject: fabric.Object) {
     const aCoords = activeObject.aCoords as NonNullable<fabric.Object["aCoords"]>;
     const centerPoint = new fabric.Point((aCoords.tl.x + aCoords.br.x) / 2, (aCoords.tl.y + aCoords.br.y) / 2);
 
@@ -184,110 +184,145 @@ export class AlignGuidelines {
     );
   }
 
+  // 当对象被旋转时，需要忽略一些坐标，例如水平辅助线只取最上、下边的坐标（参考 figma）
+  private omitCoords(objCoords: NewCoords, type: "vertical" | "horizontal") {
+    let newCoords;
+    type PointArr = [keyof NewCoords, fabric.Point];
+    if (type === "vertical") {
+      let l: PointArr = ["tl", objCoords.tl];
+      let r: PointArr = ["tl", objCoords.tl];
+      Keys(objCoords).forEach((key) => {
+        if (objCoords[key].x < l[1].x) {
+          l = [key, objCoords[key]];
+        }
+        if (objCoords[key].x > r[1].x) {
+          r = [key, objCoords[key]];
+        }
+      });
+      newCoords = {
+        [l[0]]: l[1],
+        [r[0]]: r[1],
+        c: objCoords.c,
+      } as NewCoords;
+    } else {
+      let t: PointArr = ["tl", objCoords.tl];
+      let b: PointArr = ["tl", objCoords.tl];
+      Keys(objCoords).forEach((key) => {
+        if (objCoords[key].y < t[1].y) {
+          t = [key, objCoords[key]];
+        }
+        if (objCoords[key].y > b[1].y) {
+          b = [key, objCoords[key]];
+        }
+      });
+      newCoords = {
+        [t[0]]: t[1],
+        [b[0]]: b[1],
+        c: objCoords.c,
+      } as NewCoords;
+    }
+    return newCoords;
+  }
+
+  private getObjMaxWidthHeightByCoords(coords: NewCoords) {
+    const objHeight = Math.max(Math.abs(coords.c.y - coords["tl"].y), Math.abs(coords.c.y - coords["tr"].y)) * 2;
+    const objWidth = Math.max(Math.abs(coords.c.x - coords["tl"].x), Math.abs(coords.c.x - coords["tr"].x)) * 2;
+    return { objHeight, objWidth };
+  }
+
   private traversAllObjects(activeObject: fabric.Object, canvasObjects: fabric.Object[]) {
-    const movingCoords = this.getObjMovingCoords(activeObject);
+    const draggingObjCoords = this.getObjDraggingObjCoords(activeObject);
 
     const snapXPoints: number[] = [];
     const snapYPoints: number[] = [];
 
     for (let i = canvasObjects.length; i--; ) {
       if (canvasObjects[i] === activeObject) continue;
-
       const objCoords = {
         ...canvasObjects[i].aCoords,
         c: canvasObjects[i].getCenterPoint(),
       } as NewCoords;
-
-      Keys(movingCoords).forEach((activeObjPoint) => {
-        let newCoords = objCoords;
-        if (canvasObjects[i].angle !== 0) {
-          // 当对象被旋转时，需要忽略一些坐标，只取最上、下边的坐标（参考 figma）
-          let topPoint: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
-          let bottomPoint: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
-          Keys(objCoords).forEach((key) => {
-            if (objCoords[key].y < topPoint[1].y) {
-              topPoint = [key, objCoords[key]];
-            }
-            if (objCoords[key].y > bottomPoint[1].y) {
-              bottomPoint = [key, objCoords[key]];
-            }
-          });
-          newCoords = {
-            [topPoint[0]]: topPoint[1],
-            [bottomPoint[0]]: bottomPoint[1],
-            c: objCoords.c,
-          } as any;
-        }
+      const { objHeight, objWidth } = this.getObjMaxWidthHeightByCoords(objCoords);
+      Keys(draggingObjCoords).forEach((activeObjPoint) => {
+        const newCoords = canvasObjects[i].angle !== 0 ? this.omitCoords(objCoords, "horizontal") : objCoords;
         Keys(newCoords).forEach((objPoint) => {
-          if (this.isInRange(movingCoords[activeObjPoint].y, objCoords[objPoint].y)) {
+          if (this.isInRange(draggingObjCoords[activeObjPoint].y, objCoords[objPoint].y)) {
             const y = objCoords[objPoint].y;
             let x1: number, x2: number;
-            x1 = Math.min(objCoords[objPoint].x, movingCoords[activeObjPoint].x);
-            x2 = Math.max(objCoords[objPoint].x, movingCoords[activeObjPoint].x);
+
+            if (objPoint === "c") {
+              x1 = Math.min(objCoords.c.x - objWidth / 2, draggingObjCoords[activeObjPoint].x);
+              x2 = Math.max(objCoords.c.x + objWidth / 2, draggingObjCoords[activeObjPoint].x);
+            } else {
+              x1 = Math.min(objCoords[objPoint].x, draggingObjCoords[activeObjPoint].x);
+              x2 = Math.max(objCoords[objPoint].x, draggingObjCoords[activeObjPoint].x);
+            }
+
             this.horizontalLines.push({ y, x1, x2 });
-            const offset = movingCoords[activeObjPoint].y - y;
-            snapYPoints.push(movingCoords.c.y - offset);
+            const offset = draggingObjCoords[activeObjPoint].y - y;
+            snapYPoints.push(draggingObjCoords.c.y - offset);
           }
         });
       });
 
-      Keys(movingCoords).forEach((activeObjPoint) => {
-        let newCoords = objCoords;
-        if (canvasObjects[i].angle !== 0) {
-          let l: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
-          let r: [keyof NewCoords, fabric.Point] = ["tl", objCoords.tl];
-
-          Keys(objCoords).forEach((key) => {
-            if (objCoords[key].x < l[1].x) {
-              l = [key, objCoords[key]];
-            }
-            if (objCoords[key].x > r[1].x) {
-              r = [key, objCoords[key]];
-            }
-          });
-
-          newCoords = {
-            [l[0]]: l[1],
-            [r[0]]: r[1],
-            c: objCoords.c,
-          } as any;
-        }
-
+      Keys(draggingObjCoords).forEach((activeObjPoint) => {
+        const newCoords = canvasObjects[i].angle !== 0 ? this.omitCoords(objCoords, "vertical") : objCoords;
         Keys(newCoords).forEach((objPoint) => {
-          if (this.isInRange(movingCoords[activeObjPoint].x, objCoords[objPoint].x)) {
+          if (this.isInRange(draggingObjCoords[activeObjPoint].x, objCoords[objPoint].x)) {
             const x = objCoords[objPoint].x;
             let y1: number, y2: number;
-
-            y1 = Math.min(objCoords[objPoint].y, movingCoords[activeObjPoint].y);
-            y2 = Math.max(objCoords[objPoint].y, movingCoords[activeObjPoint].y);
-
+            if (objPoint === "c") {
+              y1 = Math.min(newCoords.c.y - objHeight / 2, draggingObjCoords[activeObjPoint].y);
+              y2 = Math.max(canvasObjects[i].getCenterPoint().y + objHeight / 2, draggingObjCoords[activeObjPoint].y);
+            } else {
+              y1 = Math.min(objCoords[objPoint].y, draggingObjCoords[activeObjPoint].y);
+              y2 = Math.max(objCoords[objPoint].y, draggingObjCoords[activeObjPoint].y);
+            }
             this.verticalLines.push({ x, y1, y2 });
 
-            const offset = movingCoords[activeObjPoint].x - x;
-
-            snapXPoints.push(movingCoords.c.x - offset);
+            const offset = draggingObjCoords[activeObjPoint].x - x;
+            snapXPoints.push(draggingObjCoords.c.x - offset);
           }
         });
       });
 
       if (snapXPoints.length || snapYPoints.length) {
-        const sortPoints = (list: number[], originPoint: number) => {
-          if (!list.length) return originPoint;
-          return list
-            .map((val) => ({
-              abs: Math.abs(originPoint - val),
-              val,
-            }))
-            .sort((a, b) => a.abs - b.abs)[0].val;
-        };
-        activeObject.setPositionByOrigin(
-          // auto snap nearest object, record all the snap points, and then find the nearest one
-          new fabric.Point(sortPoints(snapXPoints, movingCoords.c.x), sortPoints(snapYPoints, movingCoords.c.y)),
-          "center",
-          "center"
-        );
+        this.snap({
+          activeObject,
+          draggingObjCoords: draggingObjCoords,
+          snapXPoints,
+          snapYPoints,
+        });
       }
     }
+  }
+
+  private snap({
+    activeObject,
+    snapXPoints,
+    draggingObjCoords,
+    snapYPoints,
+  }: {
+    activeObject: fabric.Object;
+    snapXPoints: number[];
+    draggingObjCoords: NewCoords;
+    snapYPoints: number[];
+  }) {
+    const sortPoints = (list: number[], originPoint: number) => {
+      if (!list.length) return originPoint;
+      return list
+        .map((val) => ({
+          abs: Math.abs(originPoint - val),
+          val,
+        }))
+        .sort((a, b) => a.abs - b.abs)[0].val;
+    };
+    activeObject.setPositionByOrigin(
+      // auto snap nearest object, record all the snap points, and then find the nearest one
+      new fabric.Point(sortPoints(snapXPoints, draggingObjCoords.c.x), sortPoints(snapYPoints, draggingObjCoords.c.y)),
+      "center",
+      "center"
+    );
   }
 
   clearGuideline() {
