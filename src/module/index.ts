@@ -60,8 +60,8 @@ function setupObjects() {
     });
   };
 
-  const count = 10;
-  const rotateCount = 5;
+  const count = 5;
+  const rotateCount = 1;
   for (let i = 0; i < count; i++) {
     if (i < rotateCount) {
       fabricCanvas.add(genRect({ angle: Math.floor(Math.random() * 360) }));
@@ -276,7 +276,7 @@ const guideline = new AlignGuidelines({
   canvas: fabricCanvas,
   pickObjTypes: [{ key: "myType", value: "box" }],
   aligningOptions: {
-    lineColor: "#32D10A",
+    lineColor: "#ff8181",
     lineWidth: 0.5,
   },
 });

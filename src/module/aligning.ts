@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { Keys } from "./util";
+import { Keys, omit } from "./util";
 
 type VerticalLineCoords = {
   x: number;
@@ -15,7 +15,7 @@ type HorizontalLineCoords = {
 
 type IgnoreObjTypes = { key: string; value: any }[];
 
-type NewCoords = NonNullable<fabric.Object["aCoords"]> & {
+type ACoordsAppendCenter = NonNullable<fabric.Object["aCoords"]> & {
   c: fabric.Point;
 };
 
@@ -180,14 +180,14 @@ export class AlignGuidelines {
       },
       {
         c: activeObject.getCenterPoint(),
-      } as NewCoords
+      } as ACoordsAppendCenter
     );
   }
 
   // 当对象被旋转时，需要忽略一些坐标，例如水平辅助线只取最上、下边的坐标（参考 figma）
-  private omitCoords(objCoords: NewCoords, type: "vertical" | "horizontal") {
+  private omitCoords(objCoords: ACoordsAppendCenter, type: "vertical" | "horizontal") {
     let newCoords;
-    type PointArr = [keyof NewCoords, fabric.Point];
+    type PointArr = [keyof ACoordsAppendCenter, fabric.Point];
     if (type === "vertical") {
       let l: PointArr = ["tl", objCoords.tl];
       let r: PointArr = ["tl", objCoords.tl];
@@ -203,7 +203,7 @@ export class AlignGuidelines {
         [l[0]]: l[1],
         [r[0]]: r[1],
         c: objCoords.c,
-      } as NewCoords;
+      } as ACoordsAppendCenter;
     } else {
       let t: PointArr = ["tl", objCoords.tl];
       let b: PointArr = ["tl", objCoords.tl];
@@ -219,19 +219,27 @@ export class AlignGuidelines {
         [t[0]]: t[1],
         [b[0]]: b[1],
         c: objCoords.c,
-      } as NewCoords;
+      } as ACoordsAppendCenter;
     }
     return newCoords;
   }
 
-  private getObjMaxWidthHeightByCoords(coords: NewCoords) {
+  private getObjMaxWidthHeightByCoords(coords: ACoordsAppendCenter) {
     const objHeight = Math.max(Math.abs(coords.c.y - coords["tl"].y), Math.abs(coords.c.y - coords["tr"].y)) * 2;
     const objWidth = Math.max(Math.abs(coords.c.x - coords["tl"].x), Math.abs(coords.c.x - coords["tr"].x)) * 2;
     return { objHeight, objWidth };
   }
 
+  /**
+   * fabric.Object.getCenterPoint will return the center point of the object calc by mouse moving & dragging distance.
+   * calcCenterPointByACoords will return real center point of the object position.
+   */
+  private calcCenterPointByACoords(coords: NonNullable<fabric.Object["aCoords"]>): fabric.Point {
+    return new fabric.Point((coords.tl.x + coords.br.x) / 2, (coords.tl.y + coords.br.y) / 2);
+  }
+
   private traversAllObjects(activeObject: fabric.Object, canvasObjects: fabric.Object[]) {
-    const draggingObjCoords = this.getObjDraggingObjCoords(activeObject);
+    const objCoordsByMovingDistance = this.getObjDraggingObjCoords(activeObject);
 
     const snapXPoints: number[] = [];
     const snapYPoints: number[] = [];
@@ -241,59 +249,86 @@ export class AlignGuidelines {
       const objCoords = {
         ...canvasObjects[i].aCoords,
         c: canvasObjects[i].getCenterPoint(),
-      } as NewCoords;
+      } as ACoordsAppendCenter;
       const { objHeight, objWidth } = this.getObjMaxWidthHeightByCoords(objCoords);
-      Keys(draggingObjCoords).forEach((activeObjPoint) => {
+      Keys(objCoordsByMovingDistance).forEach((activeObjPoint) => {
         const newCoords = canvasObjects[i].angle !== 0 ? this.omitCoords(objCoords, "horizontal") : objCoords;
+
+        function calcHorizontalLineCoords(objPoint: keyof ACoordsAppendCenter, activeObjCoords: ACoordsAppendCenter) {
+          let x1: number, x2: number;
+          if (objPoint === "c") {
+            x1 = Math.min(objCoords.c.x - objWidth / 2, activeObjCoords[activeObjPoint].x);
+            x2 = Math.max(objCoords.c.x + objWidth / 2, activeObjCoords[activeObjPoint].x);
+          } else {
+            x1 = Math.min(objCoords[objPoint].x, activeObjCoords[activeObjPoint].x);
+            x2 = Math.max(objCoords[objPoint].x, activeObjCoords[activeObjPoint].x);
+          }
+          return { x1, x2 };
+        }
+
         Keys(newCoords).forEach((objPoint) => {
-          if (this.isInRange(draggingObjCoords[activeObjPoint].y, objCoords[objPoint].y)) {
+          if (this.isInRange(objCoordsByMovingDistance[activeObjPoint].y, objCoords[objPoint].y)) {
             const y = objCoords[objPoint].y;
-            let x1: number, x2: number;
+            let { x1, x2 } = calcHorizontalLineCoords(objPoint, objCoordsByMovingDistance);
 
-            if (objPoint === "c") {
-              x1 = Math.min(objCoords.c.x - objWidth / 2, draggingObjCoords[activeObjPoint].x);
-              x2 = Math.max(objCoords.c.x + objWidth / 2, draggingObjCoords[activeObjPoint].x);
+            const offset = objCoordsByMovingDistance[activeObjPoint].y - y;
+            snapYPoints.push(objCoordsByMovingDistance.c.y - offset);
+
+            if (activeObject.aCoords) {
+              let { x1, x2 } = calcHorizontalLineCoords(objPoint, {
+                ...activeObject.aCoords,
+                c: this.calcCenterPointByACoords(activeObject.aCoords),
+              } as ACoordsAppendCenter);
+              this.horizontalLines.push({ y, x1, x2 });
             } else {
-              x1 = Math.min(objCoords[objPoint].x, draggingObjCoords[activeObjPoint].x);
-              x2 = Math.max(objCoords[objPoint].x, draggingObjCoords[activeObjPoint].x);
+              this.horizontalLines.push({ y, x1, x2 });
             }
-
-            this.horizontalLines.push({ y, x1, x2 });
-            const offset = draggingObjCoords[activeObjPoint].y - y;
-            snapYPoints.push(draggingObjCoords.c.y - offset);
           }
         });
       });
 
-      Keys(draggingObjCoords).forEach((activeObjPoint) => {
+      Keys(objCoordsByMovingDistance).forEach((activeObjPoint) => {
         const newCoords = canvasObjects[i].angle !== 0 ? this.omitCoords(objCoords, "vertical") : objCoords;
-        Keys(newCoords).forEach((objPoint) => {
-          if (this.isInRange(draggingObjCoords[activeObjPoint].x, objCoords[objPoint].x)) {
-            const x = objCoords[objPoint].x;
-            let y1: number, y2: number;
-            if (objPoint === "c") {
-              y1 = Math.min(newCoords.c.y - objHeight / 2, draggingObjCoords[activeObjPoint].y);
-              y2 = Math.max(canvasObjects[i].getCenterPoint().y + objHeight / 2, draggingObjCoords[activeObjPoint].y);
-            } else {
-              y1 = Math.min(objCoords[objPoint].y, draggingObjCoords[activeObjPoint].y);
-              y2 = Math.max(objCoords[objPoint].y, draggingObjCoords[activeObjPoint].y);
-            }
-            this.verticalLines.push({ x, y1, y2 });
 
-            const offset = draggingObjCoords[activeObjPoint].x - x;
-            snapXPoints.push(draggingObjCoords.c.x - offset);
+        function calcVerticalLineCoords(objPoint: keyof ACoordsAppendCenter, activeObjCoords: ACoordsAppendCenter) {
+          let y1: number, y2: number;
+          if (objPoint === "c") {
+            y1 = Math.min(newCoords.c.y - objHeight / 2, activeObjCoords[activeObjPoint].y);
+            y2 = Math.max(newCoords.c.y + objHeight / 2, activeObjCoords[activeObjPoint].y);
+          } else {
+            y1 = Math.min(objCoords[objPoint].y, activeObjCoords[activeObjPoint].y);
+            y2 = Math.max(objCoords[objPoint].y, activeObjCoords[activeObjPoint].y);
+          }
+          return { y1, y2 };
+        }
+
+        Keys(newCoords).forEach((objPoint) => {
+          if (this.isInRange(objCoordsByMovingDistance[activeObjPoint].x, objCoords[objPoint].x)) {
+            const x = objCoords[objPoint].x;
+            let { y1, y2 } = calcVerticalLineCoords(objPoint, objCoordsByMovingDistance);
+
+            const offset = objCoordsByMovingDistance[activeObjPoint].x - x;
+            snapXPoints.push(objCoordsByMovingDistance.c.x - offset);
+
+            if (activeObject.aCoords) {
+              let { y1, y2 } = calcVerticalLineCoords(objPoint, {
+                ...activeObject.aCoords,
+                c: this.calcCenterPointByACoords(activeObject.aCoords),
+              } as ACoordsAppendCenter);
+              this.verticalLines.push({ x, y1, y2 });
+            } else {
+              this.verticalLines.push({ x, y1, y2 });
+            }
           }
         });
       });
 
-      if (snapXPoints.length || snapYPoints.length) {
-        this.snap({
-          activeObject,
-          draggingObjCoords: draggingObjCoords,
-          snapXPoints,
-          snapYPoints,
-        });
-      }
+      this.snap({
+        activeObject,
+        draggingObjCoords: objCoordsByMovingDistance,
+        snapXPoints,
+        snapYPoints,
+      });
     }
   }
 
@@ -305,7 +340,7 @@ export class AlignGuidelines {
   }: {
     activeObject: fabric.Object;
     snapXPoints: number[];
-    draggingObjCoords: NewCoords;
+    draggingObjCoords: ACoordsAppendCenter;
     snapYPoints: number[];
   }) {
     const sortPoints = (list: number[], originPoint: number) => {
